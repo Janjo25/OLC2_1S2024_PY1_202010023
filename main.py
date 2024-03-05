@@ -1,6 +1,10 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext, ttk
 
+from interpreter.environment.environment import Environment
+from interpreter.environment.syntax_tree import SyntaxTree
+from interpreter.parser import Interpreter
+
 
 def new_file():
     code_editor.delete('1.0', tk.END)  # Se borra el contenido del editor de texto.
@@ -31,7 +35,21 @@ def save_file():
 
 
 def execute_code():
-    messagebox.showinfo("Ejecutar", "Ejecución de código no implementada.")
+    input_code = code_editor.get("1.0", tk.END)  # Se obtiene el código del editor de texto.
+
+    environment = Environment(None, "Global")  # Se crea un entorno global.
+    interpreter = Interpreter()
+    syntax_tree = SyntaxTree()
+
+    instructions = interpreter.interpret(input_code)  # Se interpreta el código y se obtienen las instrucciones.
+
+    for instruction in instructions:  # Se ejecuta cada instrucción individualmente.
+        instruction.execute(syntax_tree, environment)
+
+    console_tab.config(state="normal")  # Se habilita la pestaña de consola.
+    console_tab.delete("1.0", tk.END)  # Se borra el contenido de la pestaña de consola.
+    console_tab.insert("1.0", str(syntax_tree.get_console()))  # Se inserta el contenido de la consola.
+    console_tab.config(state="disabled")  # Se deshabilita la pestaña de consola.
 
 
 def show_reports():
