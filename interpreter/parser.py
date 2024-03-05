@@ -289,7 +289,7 @@ def p_expression(p):
     elif len(p) == 3:  # Si hay 3 elementos, entonces es una negación.
         p[0] = ("not_expression", p[2])
     elif len(p) == 4:  # Si hay 4 elementos, entonces es una expresión entre paréntesis.
-        p[0] = ("grouped_expression", p[2])
+        p[0] = p[2]
     else:  # Si hay 5 elementos, entonces es una llamada a función.
         p[0] = ("function_call", p[1], p[3])
 
