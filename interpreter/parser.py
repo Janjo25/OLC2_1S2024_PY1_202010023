@@ -18,21 +18,31 @@ class Interpreter:
         return self.parser.parse(input_text)
 
 
-reserved = {
-    'Keys': 'KEYS', 'Object': 'OBJECT', 'Values': 'VALUES', 'array': 'ARRAY', 'boolean': 'BOOLEAN',
-    'break': 'BREAK', 'case': 'CASE', 'char': 'CHAR', 'console': 'CONSOLE', 'const': 'CONST',
-    'continue': 'CONTINUE', 'default': 'DEFAULT', 'else': 'ELSE', 'false': 'FALSE', 'float': 'FLOAT',
-    'for': 'FOR', 'function': 'FUNCTION', 'if': 'IF', 'indexOf': 'INDEXOF', 'interface': 'INTERFACE',
-    'join': 'JOIN', 'length': 'LENGTH', 'log': 'LOG', 'null': 'NULL', 'number': 'NUMBER',
-    'parseFloat': 'PARSEFLOAT', 'parseInt': 'PARSEINT', 'pop': 'POP', 'push': 'PUSH', 'return': 'RETURN',
-    'string': 'STRING', 'switch': 'SWITCH', 'toLowerCase': 'TOLOWERCASE', 'toString': 'TOSTRING',
-    'toUpperCase': 'TOUPPERCASE', 'true': 'TRUE', 'typeof': 'TYPEOF', 'var': 'VAR', 'while': 'WHILE'
+default_values = {
+    Types.NUMBER: 0,
+    Types.FLOAT: 0.0,
+    Types.STRING: "",
+    Types.BOOLEAN: True,
+    Types.CHAR: ''
 }
 
+# noinspection SpellCheckingInspection
+reserved = {
+    "Keys": "KEYS", "Object": "OBJECT", "Values": "VALUES", "array": "ARRAY", "boolean": "BOOLEAN",
+    "break": "BREAK", "case": "CASE", "char": "CHAR", "console": "CONSOLE", "const": "CONST",
+    "continue": "CONTINUE", "default": "DEFAULT", "else": "ELSE", "false": "FALSE", "float": "FLOAT",
+    "for": "FOR", "function": "FUNCTION", "if": "IF", "indexOf": "INDEXOF", "interface": "INTERFACE",
+    "join": "JOIN", "length": "LENGTH", "log": "LOG", "null": "NULL", "number": "NUMBER",
+    "parseFloat": "PARSEFLOAT", "parseInt": "PARSEINT", "pop": "POP", "push": "PUSH", "return": "RETURN",
+    "string": "STRING", "switch": "SWITCH", "toLowerCase": "TOLOWERCASE", "toString": "TOSTRING",
+    "toUpperCase": "TOUPPERCASE", "true": "TRUE", "typeof": "TYPEOF", "var": "VAR", "while": "WHILE"
+}
+
+# noinspection SpellCheckingInspection
 tokens = [
-    'AND', 'ASSIGN', 'COLON', 'COMMA', 'COMMENT_MULTI', 'COMMENT_SINGLE', 'DIVIDE', 'DOT', 'EQ', 'GE', 'GT',
-    'IDENTIFIER', 'LBRACE', 'LBRACKET', 'LE', 'LPAREN', 'LT', 'MINUS', 'MINUSEQUAL', 'MOD', 'NEQ', 'NOT', 'OR',
-    'PLUS', 'PLUSEQUAL', 'QUESTION', 'RBRACE', 'RBRACKET', 'RPAREN', 'SEMICOLON', 'TIMES'
+    "AND", "ASSIGN", "COLON", "COMMA", "COMMENT_MULTI", "COMMENT_SINGLE", "DIVIDE", "DOT", "EQ", "GE", "GT",
+    "IDENTIFIER", "LBRACE", "LBRACKET", "LE", "LPAREN", "LT", "MINUS", "MINUSEQUAL", "MOD", "NEQ", "NOT", "OR",
+    "PLUS", "PLUSEQUAL", "QUESTION", "RBRACE", "RBRACKET", "RPAREN", "SEMICOLON", "TIMES"
 ]
 
 tokens += list(reserved.values())
@@ -90,6 +100,7 @@ def find_column(input_text, token):  # Función para encontrar la columna de un 
     return (token.lexpos - line_start) + 1
 
 
+# noinspection PyPep8Naming
 def t_BOOLEAN(t):  # Función para reconocer booleanos.
     r"""true|false"""
     try:
@@ -102,11 +113,12 @@ def t_BOOLEAN(t):  # Función para reconocer booleanos.
     except ValueError:
         t.value = Primitive(0, 0, None, Types.NULL)
 
-        print(f"Booleano no válido en la línea {t.lineno}, columna {find_column(t.lexer.lexdata, t)}.")
+        print(f"booleano no válido en la línea {t.lineno}, columna {find_column(t.lexer.lexdata, t)}.")
 
     return t
 
 
+# noinspection DuplicatedCode,PyPep8Naming
 def t_CHAR(t):  # Función para reconocer caracteres.
     r"""'(?:\\['\\]|[^\n'\\])'"""
     try:
@@ -119,21 +131,24 @@ def t_CHAR(t):  # Función para reconocer caracteres.
     except ValueError:
         t.value = Primitive(0, 0, None, Types.NULL)
 
-        print(f"Carácter no válido en la línea {t.lineno}, columna {find_column(t.lexer.lexdata, t)}.")
+        print(f"carácter no válido en la línea {t.lineno}, columna {find_column(t.lexer.lexdata, t)}.")
 
     return t
 
 
+# noinspection PyPep8Naming
 def t_COMMENT_MULTI(t):  # Función para reconocer comentarios de múltiples líneas.
     r"""/\*(.|\n)*?\*/"""
     t.lexer.lineno += t.value.count("\n")  # Se aumenta el número de línea por cada salto de línea en el comentario.
 
 
+# noinspection PyPep8Naming,PyUnusedLocal
 def t_COMMENT_SINGLE(t):  # Función para reconocer comentarios de una línea.
     r"""//.*"""
     pass
 
 
+# noinspection PyPep8Naming
 def t_FLOAT(t):  # Función para reconocer flotantes.
     r"""\d+\.\d+"""
     try:
@@ -146,11 +161,12 @@ def t_FLOAT(t):  # Función para reconocer flotantes.
     except ValueError:
         t.value = Primitive(0, 0, None, Types.NULL)
 
-        print(f"Número decimal no válido en la línea {t.lineno}, columna {find_column(t.lexer.lexdata, t)}.")
+        print(f"número decimal no válido en la línea {t.lineno}, columna {find_column(t.lexer.lexdata, t)}.")
 
     return t
 
 
+# noinspection PyPep8Naming
 def t_IDENTIFIER(t):  # Función para reconocer identificadores.
     r"""[a-zA-Z_][a-zA-Z_0-9]*"""
     t.type = reserved.get(t.value, "IDENTIFIER")  # Se verifica si el identificador es una palabra reservada.
@@ -158,9 +174,10 @@ def t_IDENTIFIER(t):  # Función para reconocer identificadores.
     return t
 
 
+# noinspection PyPep8Naming
 def t_NULL(t):  # Función para reconocer nulos.
     r"""null"""
-    t.value = None  # No es necesario un try-except ya que no hay posibilidad de error.
+    t.value = None  # No es necesario un try-except, ya que no hay posibilidad de error.
 
     line = t.lineno
     column = find_column(t.lexer.lexdata, t)
@@ -170,6 +187,7 @@ def t_NULL(t):  # Función para reconocer nulos.
     return t
 
 
+# noinspection PyPep8Naming
 def t_NUMBER(t):  # Función para reconocer números.
     r"""\d+"""
     try:
@@ -182,13 +200,14 @@ def t_NUMBER(t):  # Función para reconocer números.
     except ValueError:
         t.value = Primitive(0, 0, None, Types.NULL)
 
-        print(f"Número no válido en la línea {t.lineno}, columna {find_column(t.lexer.lexdata, t)}.")
+        print(f"número no válido en la línea {t.lineno}, columna {find_column(t.lexer.lexdata, t)}.")
 
     return t
 
 
+# noinspection DuplicatedCode,PyPep8Naming
 def t_STRING(t):  # Función para reconocer cadenas.
-    r""""(?:\\["\\]|[^\n"\\])*\""""
+    r""""(?:\\.|[^"\\])*\""""
     try:
         t.value = bytes(t.value[1:-1], "utf-8").decode("unicode_escape")  # Se decodifican las secuencias de escape.
 
@@ -199,7 +218,7 @@ def t_STRING(t):  # Función para reconocer cadenas.
     except ValueError:
         t.value = Primitive(0, 0, None, Types.NULL)
 
-        print(f"Cadena no válida en la línea {t.lineno}, columna {find_column(t.lexer.lexdata, t)}.")
+        print(f"cadena no válida en la línea {t.lineno}, columna {find_column(t.lexer.lexdata, t)}.")
 
     return t
 
@@ -213,7 +232,7 @@ def t_newline(t):  # Función para reconocer saltos de línea.
 
 
 def t_error(t):  # Función para manejar errores léxicos.
-    print(f"Carácter no válido '{t.value[0]}' en la línea {t.lineno}, columna {find_column(t.lexer.lexdata, t)}.")
+    print(f"carácter no válido '{t.value[0]}' en la línea {t.lineno}, columna {find_column(t.lexer.lexdata, t)}.")
 
     t.lexer.skip(1)  # Se salta el carácter no válido.
 
@@ -489,15 +508,25 @@ def p_variable_assignment(p):
 
 
 def p_variable_declaration(p):
-    """variable_declaration : VAR IDENTIFIER COLON type ASSIGN expression SEMICOLON"""
+    """variable_declaration : VAR IDENTIFIER ASSIGN expression SEMICOLON
+                            | VAR IDENTIFIER COLON type ASSIGN expression SEMICOLON
+                            | VAR IDENTIFIER COLON type SEMICOLON"""
     line = p.lexer.lineno
     column = find_column(p.lexer.lexdata, p.lexer)
 
-    p[0] = Declaration(line, column, p[2], p[4], p[6])
+    if len(p) == 6:  # Si hay 6 elementos, entonces no hay un tipo o un valor.
+        if isinstance(p[4], Types):  # Si el cuarto elemento es un tipo, entonces no hay un valor, solo un tipo.
+            default_value = Primitive(line, column, default_values.get(p[4]), p[4])  # Se obtiene el valor por defecto.
+
+            p[0] = Declaration(line, column, p[2], p[4], default_value)
+        else:  # Si el cuarto elemento no es un tipo, entonces hay un valor.
+            p[0] = Declaration(line, column, p[2], p[4].kind, p[4])
+    else:  # Si hay más de 6 elementos, entonces hay un tipo y un valor.
+        p[0] = Declaration(line, column, p[2], p[4], p[6])
 
 
 def p_error(p):
     if p:
-        print(f"Error de sintaxis en la línea {p.lineno}, columna {find_column(p.lexer.lexdata, p)}")
+        print(f"error de sintaxis en la línea {p.lineno}, columna {find_column(p.lexer.lexdata, p)}")
     else:
-        print("Error de sintaxis al final del archivo")
+        print("error de sintaxis al final del archivo")

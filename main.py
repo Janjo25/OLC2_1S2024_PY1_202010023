@@ -7,7 +7,7 @@ from interpreter.parser import Interpreter
 
 
 def new_file():
-    code_editor.delete('1.0', tk.END)  # Se borra el contenido del editor de texto.
+    code_editor.delete("1.0", tk.END)  # Se borra el contenido del editor de texto.
 
 
 def open_file():
@@ -16,11 +16,11 @@ def open_file():
     if file_path:
         try:
             with open(file_path) as file:
-                code_editor.delete('1.0', tk.END)  # Se borra el contenido del editor de texto.
+                code_editor.delete("1.0", tk.END)  # Se borra el contenido del editor de texto.
 
-                code_editor.insert('1.0', file.read())  # Se inserta el contenido del archivo en el editor de texto.
+                code_editor.insert("1.0", file.read())  # Se inserta el contenido del archivo en el editor de texto.
         except Exception as exception:
-            messagebox.showerror("Abrir archivo", f"Error al abrir el archivo: {exception}")
+            messagebox.showerror("abrir archivo", f"error al abrir el archivo: {exception}")
 
 
 def save_file():
@@ -29,9 +29,9 @@ def save_file():
     if file_path:
         try:
             with open(file_path, 'w') as file:
-                file.write(code_editor.get('1.0', tk.END))
+                file.write(code_editor.get("1.0", tk.END))
         except Exception as exception:
-            messagebox.showerror("Guardar archivo", f"Error al guardar el archivo: {exception}")
+            messagebox.showerror("guardar archivo", f"error al guardar el archivo: {exception}")
 
 
 def execute_code():
@@ -96,9 +96,9 @@ symbol_tab.config(state="disabled")
 errors_tab = tk.Text(tab_control)  # Se crea una pestaña para los errores.
 errors_tab.config(state="disabled")
 
-tab_control.add(console_tab, text='Consola')
-tab_control.add(symbol_tab, text='Tabla de Símbolos')
-tab_control.add(errors_tab, text='Errores')
+tab_control.add(console_tab, text="Consola")
+tab_control.add(symbol_tab, text="Tabla de Símbolos")
+tab_control.add(errors_tab, text="Errores")
 tab_control.grid(row=1, column=1, rowspan=3, padx=10, pady=0, sticky="nsew")
 
 root.mainloop()  # Se inicia el bucle principal de la ventana.
