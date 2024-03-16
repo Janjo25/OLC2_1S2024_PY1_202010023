@@ -13,7 +13,15 @@ class Declaration(Instruction):
         symbol = self.expressions.execute(syntax_tree, environment)
 
         if symbol.kind != self.kind:
-            syntax_tree.set_errors("el tipo de la variable no coincide con el tipo de la expresión")
+            line = symbol.line
+            column = symbol.column
+            error_description = f"el tipo de dato de la variable '{self.name}' no coincide con el tipo de dato"
+
+            syntax_tree.set_errors(line, column, error_description, environment.name, "semántico")
+
+            symbol.value = None  # Ya que el tipo de dato no coincide, se le asigna un valor nulo.
+
+            environment.check_variable(syntax_tree, self.name, symbol)  # Se revisa si existe en la tabla de símbolos.
 
             return
 
