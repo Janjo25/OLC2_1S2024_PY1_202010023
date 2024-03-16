@@ -8,6 +8,6 @@ class VariableAccess(Expression):
         self.name = name
 
     def execute(self, syntax_tree, environment):
-        symbol = environment.get_variable(syntax_tree, self.name)  # Se busca la variable en el entorno.
+        symbol = environment.get_variable(self.line, self.column, syntax_tree, self.name)  # Se busca en el entorno.
 
         return symbol
