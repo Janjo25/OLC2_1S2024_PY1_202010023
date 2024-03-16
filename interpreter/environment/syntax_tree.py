@@ -1,3 +1,6 @@
+from interpreter.environment.error import Error
+
+
 class SyntaxTree:
     def __init__(self):
         self.console = ""
@@ -10,7 +13,9 @@ class SyntaxTree:
     def get_console(self):
         return self.console
 
-    def set_errors(self, error):
+    def set_errors(self, line, column, description, scope, kind):
+        error = Error(line, column, description, scope, kind)
+
         self.errors.append(error)
 
     def get_errors(self):

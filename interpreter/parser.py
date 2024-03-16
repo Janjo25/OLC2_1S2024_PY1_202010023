@@ -5,7 +5,9 @@ from interpreter.environment.types import Types
 from interpreter.expressions.access import VariableAccess
 from interpreter.expressions.operation import Operation
 from interpreter.expressions.primitive import Primitive
+from interpreter.instructions.assignment import Assignment
 from interpreter.instructions.declaration import Declaration
+from interpreter.instructions.if_instruction import IfInstruction
 from interpreter.instructions.print import Print
 
 
@@ -252,17 +254,8 @@ precedence = (
 
 
 def p_program(p):
-    """program : statement_block"""
+    """program : statements"""
     p[0] = p[1]
-
-
-def p_statement_block(p):
-    """statement_block : LBRACE RBRACE
-                       | LBRACE statements RBRACE"""
-    if len(p) == 3:  # Si solo hay 3 elementos, es decir, 'LBRACE' 'RBRACE', entonces no hay nada en el bloque.
-        p[0] = []
-    else:  # Si hay más de 3 elementos, entonces hay instrucciones en el bloque.
-        p[0] = p[2]
 
 
 def p_statements(p):
@@ -390,6 +383,16 @@ def p_native_function(p):
         p[0] = ("to_uppercase", p[1])
 
 
+def p_primitive(p):
+    """primitive : BOOLEAN
+                 | CHAR
+                 | FLOAT
+                 | NULL
+                 | NUMBER
+                 | STRING"""
+    p[0] = p[1]
+
+
 def p_flow_statements(p):
     """flow_statements : for_statement
                        | if_statement
@@ -403,11 +406,23 @@ def p_for_statement(p):
     p[0] = ('for_statement', p[3], p[5], p[7], p[9])
 
 
+def p_statement_block(p):
+    """statement_block : LBRACE RBRACE
+                       | LBRACE statements RBRACE"""
+    if len(p) == 3:  # Si solo hay 3 elementos, es decir, 'LBRACE' 'RBRACE', entonces no hay nada en el bloque.
+        p[0] = []
+    else:  # Si hay más de 3 elementos, entonces hay instrucciones en el bloque.
+        p[0] = p[2]
+
+
 def p_if_statement(p):
     """if_statement : IF LPAREN expression RPAREN statement_block
                     | IF LPAREN expression RPAREN statement_block ELSE statement_block"""
     if len(p) == 6:  # Si solo hay 6 elementos, entonces no hay un 'else'.
-        p[0] = ('if_statement', p[3], p[5])
+        line = p.lexer.lineno
+        column = find_column(p.lexer.lexdata, p.lexer)
+
+        p[0] = IfInstruction(line, column, p[3], p[5])
     else:  # Si hay más de 6 elementos, entonces hay un 'else'.
         p[0] = ('if_else_statement', p[3], p[5], p[7])
 
@@ -429,16 +444,6 @@ def p_switch_cases(p):
 def p_switch_case(p):
     """switch_case : CASE primitive COLON statement_block"""
     p[0] = ('switch_case', p[2], p[4])
-
-
-def p_primitive(p):
-    """primitive : BOOLEAN
-                 | CHAR
-                 | FLOAT
-                 | NULL
-                 | NUMBER
-                 | STRING"""
-    p[0] = p[1]
 
 
 def p_default_case(p):
@@ -504,7 +509,10 @@ def p_return_statement(p):
 
 def p_variable_assignment(p):
     """variable_assignment : IDENTIFIER ASSIGN expression SEMICOLON"""
-    p[0] = ('variable_assignment', p[1], p[3])
+    line = p.lexer.lineno
+    column = find_column(p.lexer.lexdata, p.lexer)
+
+    p[0] = Assignment(line, column, p[1], p[3])
 
 
 def p_variable_declaration(p):

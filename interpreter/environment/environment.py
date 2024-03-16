@@ -14,8 +14,20 @@ class Environment:
     def set_variable(self, syntax_tree, name, symbol):
         current_environment = self
 
+        line = symbol.line
+        column = symbol.column
+
         while True:
             if name in current_environment.table:
+                stored_symbol = current_environment.table[name]  # Se obtiene el símbolo almacenado.
+
+                if stored_symbol.kind != symbol.kind:  # Se revisa si la variable ya existe con un tipo diferente.
+                    error_description = f"la variable '{name}' ya existe con un tipo diferente"
+
+                    syntax_tree.set_errors(line, column, error_description, current_environment.name, "semántico")
+
+                    return
+
                 current_environment.table[name] = symbol  # Se revisa en la tabla de símbolos si ya existe la variable.
 
                 return symbol  # Si ya existe, se edita el símbolo en la tabla de símbolos.
@@ -25,11 +37,11 @@ class Environment:
             else:  # Si existe un entorno anterior, se convierte en el entorno actual.
                 current_environment = current_environment.previous
 
-        syntax_tree.set_errors(f"la variable '{name}' no existe")  # Se retorna 'null' si no existe la variable.
+        syntax_tree.set_errors(line, column, f"la variable '{name}' no existe", current_environment.name, "semántico")
 
-        return Symbol(0, 0, None, Types.NULL)
+        return Symbol(symbol.line, symbol.column, None, Types.NULL)
 
-    def get_variable(self, syntax_tree, name):
+    def get_variable(self, line, column, syntax_tree, name):
         current_environment = self
 
         while True:
@@ -41,13 +53,13 @@ class Environment:
             else:  # Si existe un entorno anterior, se convierte en el entorno actual.
                 current_environment = current_environment.previous
 
-        syntax_tree.set_errors(f"la variable '{name}' no existe")  # Se retorna 'null' si no existe la variable.
+        syntax_tree.set_errors(line, column, f"la variable '{name}' no existe", current_environment.name, "semántico")
 
-        return Symbol(0, 0, None, Types.NULL)
+        return Symbol("-", "-", None, Types.NULL)
 
     def check_variable(self, syntax_tree, name, symbol):
         if name in self.table:  # Se revisa en la tabla de símbolos si ya existe la variable.
-            syntax_tree.set_errors(f"la variable '{name}' ya existe")
+            syntax_tree.set_errors(symbol.line, symbol.column, f"la variable '{name}' ya existe", "semántico")
 
             return
 
