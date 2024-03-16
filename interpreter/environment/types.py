@@ -11,3 +11,7 @@ class Types(Enum):
 
     ARRAY = auto()
     INTERFACE = auto()
+
+    BREAK = auto()
+    CONTINUE = auto()
+    RETURN = auto()
