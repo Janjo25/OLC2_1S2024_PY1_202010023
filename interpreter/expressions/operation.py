@@ -61,23 +61,34 @@ class Operation(Expression):
             return self.relational_operation(left_operand, right_operand)
 
     def arithmetic_operation(self, syntax_tree, environment, left_operand, right_operand, dominant_type):
-        if self.operator == '+':
-            return Symbol(self.line, self.column, left_operand.value + right_operand.value, dominant_type)
-        elif self.operator == '-':
-            return Symbol(self.line, self.column, left_operand.value - right_operand.value, dominant_type)
-        elif self.operator == '*':
-            return Symbol(self.line, self.column, left_operand.value * right_operand.value, dominant_type)
-        elif self.operator in {'/', '%'}:
-            if right_operand.value == 0:
-                error_description = "no se puede dividir entre cero"
-                syntax_tree.set_errors(self.line, self.column, error_description, environment.name, "semántico")
+        if dominant_type == Types.NUMBER or dominant_type == Types.FLOAT or dominant_type == Types.STRING:
+            if self.operator == '+':
+                return Symbol(self.line, self.column, left_operand.value + right_operand.value, dominant_type)
 
-                return Symbol(self.line, self.column, None, Types.NULL)
+        if dominant_type == Types.NUMBER or dominant_type == Types.FLOAT:
+            if self.operator == '-':
+                return Symbol(self.line, self.column, left_operand.value - right_operand.value, dominant_type)
+            elif self.operator == '*':
+                return Symbol(self.line, self.column, left_operand.value * right_operand.value, dominant_type)
+            elif self.operator in {'/', '%'}:
+                if right_operand.value == 0:
+                    error_description = "no se puede dividir entre cero"
+                    syntax_tree.set_errors(self.line, self.column, error_description, environment.name, "semántico")
 
-            if self.operator == '/':
-                return Symbol(self.line, self.column, left_operand.value / right_operand.value, dominant_type)
-            elif self.operator == '%':
-                return Symbol(self.line, self.column, left_operand.value % right_operand.value, dominant_type)
+                    return Symbol(self.line, self.column, None, Types.NULL)
+
+                if self.operator == '/':
+                    return Symbol(self.line, self.column, left_operand.value / right_operand.value, dominant_type)
+                elif self.operator == '%':
+                    return Symbol(self.line, self.column, left_operand.value % right_operand.value, dominant_type)
+
+        left_type = left_operand.kind.name
+        right_type = right_operand.kind.name
+        error_description = "los tipos '" + left_type + "' y '" + right_type + "' no son compatibles"
+
+        syntax_tree.set_errors(self.line, self.column, error_description, environment.name, "semántico")
+
+        return Symbol(self.line, self.column, None, Types.NULL)
 
     def relational_operation(self, left_operand, right_operand):
         if self.operator == '==':
