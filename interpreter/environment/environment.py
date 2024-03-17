@@ -17,9 +17,22 @@ class Environment:
         line = symbol.line
         column = symbol.column
 
+        constant_name = f"{name}-constant"  # Con este nombre se intentará buscar la constante en la tabla de símbolos.
+
         while True:
-            if name in current_environment.table:
-                stored_symbol = current_environment.table[name]  # Se obtiene el símbolo almacenado.
+            if name in current_environment.table or constant_name in current_environment.table:
+                """Se debe de obtener el verdadero nombre, con o sin el sufijo '-constant'."""
+
+                actual_name = name if name in current_environment.table else constant_name
+
+                if actual_name == constant_name:  # Si el verdadero nombre es el de la constante, no se puede modificar.
+                    error_description = f"no es posible modificar el valor de la constante '{name}'"
+
+                    syntax_tree.set_errors(line, column, error_description, current_environment.name, "semántico")
+
+                    return
+
+                stored_symbol = current_environment.table[actual_name]  # Se obtiene el símbolo almacenado.
 
                 if stored_symbol.kind != symbol.kind:  # Se revisa si la variable ya existe con un tipo diferente.
                     if stored_symbol.kind == Types.FLOAT and symbol.kind == Types.NUMBER:
@@ -57,9 +70,13 @@ class Environment:
     def get_variable(self, line, column, syntax_tree, name):
         current_environment = self
 
+        constant_name = f"{name}-constant"  # Con este nombre se intentará buscar la constante en la tabla de símbolos.
+
         while True:
-            if name in current_environment.table:  # Se revisa en la tabla de símbolos si ya existe la variable.
-                return current_environment.table[name]
+            if name in current_environment.table or constant_name in current_environment.table:
+                actual_name = name if name in current_environment.table else constant_name
+
+                return current_environment.table[actual_name]
 
             if current_environment.previous is None:  # Si no existe un entorno anterior, se rompe el ciclo.
                 break

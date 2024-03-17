@@ -268,13 +268,33 @@ def p_statements(p):
 
 
 def p_statement(p):
-    """statement : expression_statement
+    """statement : constant_declaration
+                 | expression_statement
                  | flow_statements
                  | function_declaration
                  | transfer_statement
                  | variable_assignment
                  | variable_declaration"""
     p[0] = p[1]
+
+
+# noinspection DuplicatedCode
+def p_constant_declaration(p):
+    """constant_declaration : CONST IDENTIFIER ASSIGN expression SEMICOLON
+                            | CONST IDENTIFIER COLON type ASSIGN expression SEMICOLON"""
+    line = p.lexer.lineno
+    column = find_column(p.lexer.lexdata, p.lexer)
+
+    constant_name = f"{p[2]}-constant"  # Se le agrega un sufijo para diferenciarla de las variables.
+
+    if len(p) == 6:  # Si hay 6 elementos, entonces no hay un tipo o un valor.
+        p[0] = Declaration(line, column, constant_name, p[4].kind, p[4])
+    else:  # Si hay más de 6 elementos, entonces hay un tipo y un valor.
+        if p[4] == Types.FLOAT and p[6].kind == Types.NUMBER:  # Se hace una conversión implícita de número a flotante.
+            p[6].value = float(p[6].value)
+            p[6].kind = Types.FLOAT
+
+        p[0] = Declaration(line, column, constant_name, p[4], p[6])
 
 
 def p_expression_statement(p):
@@ -515,6 +535,7 @@ def p_variable_assignment(p):
     p[0] = Assignment(line, column, p[1], p[3])
 
 
+# noinspection DuplicatedCode
 def p_variable_declaration(p):
     """variable_declaration : VAR IDENTIFIER ASSIGN expression SEMICOLON
                             | VAR IDENTIFIER COLON type ASSIGN expression SEMICOLON
