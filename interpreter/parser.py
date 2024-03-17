@@ -360,19 +360,18 @@ def p_arithmetic_operator(p):
 
 
 def p_comparison_operator(p):
-    """comparison_operator : AND
-                           | NOT
-                           | OR"""
+    """comparison_operator : EQ
+                           | GE
+                           | GT
+                           | LE
+                           | LT
+                           | NEQ"""
     p[0] = p[1]
 
 
 def p_logical_operator(p):
-    """logical_operator : EQ
-                        | GE
-                        | GT
-                        | LE
-                        | LT
-                        | NEQ"""
+    """logical_operator : AND
+                        | OR"""
     p[0] = p[1]
 
 

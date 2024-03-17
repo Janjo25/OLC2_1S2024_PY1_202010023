@@ -63,7 +63,15 @@ class Operation(Expression):
 
                 return Symbol(self.line, self.column, None, Types.NULL)
 
-            return self.relational_operation(left_operand, right_operand)
+            return self.comparison_operation(left_operand, right_operand)
+        elif self.operator in {'&&', '||'}:
+            if left_operand.kind != Types.BOOLEAN or right_operand.kind != Types.BOOLEAN:
+                error_description = "los tipos " + left_type + " y " + right_type + " no son compatibles"
+                syntax_tree.set_errors(self.line, self.column, error_description, environment.name, "semántico")
+
+                return Symbol(self.line, self.column, None, Types.NULL)
+
+            return self.logical_operation(left_operand, right_operand)
 
     def arithmetic_operation(self, syntax_tree, environment, left_operand, right_operand, dominant_type):
         if dominant_type == Types.NUMBER or dominant_type == Types.FLOAT or dominant_type == Types.STRING:
@@ -95,7 +103,7 @@ class Operation(Expression):
 
         return Symbol(self.line, self.column, None, Types.NULL)
 
-    def relational_operation(self, left_operand, right_operand):
+    def comparison_operation(self, left_operand, right_operand):
         if self.operator == '==':
             return Symbol(self.line, self.column, left_operand.value == right_operand.value, Types.BOOLEAN)
         elif self.operator == '!=':
@@ -109,11 +117,21 @@ class Operation(Expression):
         elif self.operator == '<=':
             return Symbol(self.line, self.column, left_operand.value <= right_operand.value, Types.BOOLEAN)
 
+    def logical_operation(self, left_operand, right_operand):
+        if self.operator == '&&':
+            return Symbol(self.line, self.column, left_operand.value and right_operand.value, Types.BOOLEAN)
+        elif self.operator == '||':
+            return Symbol(self.line, self.column, left_operand.value or right_operand.value, Types.BOOLEAN)
+
     def unary_operation(self, syntax_tree, environment, operand):
-        if operand.kind == Types.NUMBER:  # Si el operando es un número, el tipo es un número.
-            return Symbol(self.line, self.column, -operand.value, Types.NUMBER)
-        elif operand.kind == Types.FLOAT:  # Si el operando es un flotante, el tipo es un flotante.
-            return Symbol(self.line, self.column, -operand.value, Types.FLOAT)
+        if self.operator == '-':
+            if operand.kind == Types.NUMBER:  # Si el operando es un número, el tipo es un número.
+                return Symbol(self.line, self.column, -operand.value, Types.NUMBER)
+            elif operand.kind == Types.FLOAT:  # Si el operando es un flotante, el tipo es un flotante.
+                return Symbol(self.line, self.column, -operand.value, Types.FLOAT)
+        elif self.operator == '!':
+            if operand.kind == Types.BOOLEAN:
+                return Symbol(self.line, self.column, not operand.value, Types.BOOLEAN)
 
         operator = self.operator
         operand_type = operand.kind.name
