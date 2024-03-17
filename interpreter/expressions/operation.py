@@ -30,6 +30,11 @@ class Operation(Expression):
         self.right_operand = right_operand
 
     def execute(self, syntax_tree, environment):
+        if self.right_operand is None:  # Si no hay operador derecho, es una operación unaria
+            operand = self.left_operand.execute(syntax_tree, environment)
+
+            return self.unary_operation(syntax_tree, environment, operand)
+
         left_operand = self.left_operand.execute(syntax_tree, environment)
         right_operand = self.right_operand.execute(syntax_tree, environment)
 
@@ -103,3 +108,17 @@ class Operation(Expression):
             return Symbol(self.line, self.column, left_operand.value >= right_operand.value, Types.BOOLEAN)
         elif self.operator == '<=':
             return Symbol(self.line, self.column, left_operand.value <= right_operand.value, Types.BOOLEAN)
+
+    def unary_operation(self, syntax_tree, environment, operand):
+        if operand.kind == Types.NUMBER:  # Si el operando es un número, el tipo es un número.
+            return Symbol(self.line, self.column, -operand.value, Types.NUMBER)
+        elif operand.kind == Types.FLOAT:  # Si el operando es un flotante, el tipo es un flotante.
+            return Symbol(self.line, self.column, -operand.value, Types.FLOAT)
+
+        operator = self.operator
+        operand_type = operand.kind.name
+        error_description = "el operador '" + operator + "' no es aplicable a los tipos '" + operand_type + "'"
+
+        syntax_tree.set_errors(self.line, self.column, error_description, environment.name, "semántico")
+
+        return Symbol(self.line, self.column, None, Types.NULL)

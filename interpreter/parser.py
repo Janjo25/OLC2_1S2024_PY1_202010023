@@ -306,11 +306,11 @@ def p_expression(p):
     """expression : IDENTIFIER
                   | IDENTIFIER LPAREN arguments RPAREN
                   | LPAREN expression RPAREN
-                  | NOT expression
                   | binary_operation
                   | native_function
-                  | primitive"""
-    if len(p) == 2:  # Si solo hay 2 elementos, entonces es un ID, una operación binaria, una nativa o un primitivo.
+                  | primitive
+                  | unary_operation"""
+    if len(p) == 2:  # Si solo hay 2 elementos, entonces es un ID o un no-terminal.
         if p.slice[1].type == "IDENTIFIER":
             line = p.lexer.lineno
             column = find_column(p.lexer.lexdata, p.lexer)
@@ -411,6 +411,15 @@ def p_primitive(p):
                  | NUMBER
                  | STRING"""
     p[0] = p[1]
+
+
+def p_unary_operation(p):
+    """unary_operation : MINUS expression
+                       | NOT expression"""
+    line = p.lexer.lineno
+    column = find_column(p.lexer.lexdata, p.lexer)
+
+    p[0] = Operation(line, column, p[1], p[2], None)
 
 
 def p_flow_statements(p):
