@@ -531,7 +531,15 @@ def p_variable_declaration(p):
             if isinstance(p[4], Primitive):  # Al ser un primitivo, se puede obtener el tipo directamente.
                 p[0] = Declaration(line, column, p[2], p[4].kind, p[4])
             else:  # Si no es un primitivo, entonces es una operación.
-                dominant_type = Operation.dominant_matrix[p[4].left_operand.kind.value][p[4].right_operand.kind.value]
+                left_type_value = p[4].left_operand.kind.value
+                right_type_value = p[4].right_operand.kind.value
+
+                dominant_type = Types.NULL
+
+                if p[4].operator in {'+', '-', '*', '/', '%'}:
+                    dominant_type = Operation.arithmetic_matrix[left_type_value][right_type_value]
+                elif p[4].operator in {'==', '!=', '>', '>=', '<', '<='}:
+                    dominant_type = Operation.relational_matrix[left_type_value][right_type_value]
 
                 p[0] = Declaration(line, column, p[2], dominant_type, p[4])
     else:  # Si hay más de 6 elementos, entonces hay un tipo y un valor.

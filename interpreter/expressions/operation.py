@@ -4,12 +4,22 @@ from interpreter.interfaces.expression import Expression
 
 
 class Operation(Expression):
-    dominant_matrix = [
+    # noinspection DuplicatedCode
+    arithmetic_matrix = [  # Tabla de tipos para saber el tipo que resulta de una operación aritmética.
         [Types.NUMBER, Types.FLOAT, Types.NULL, Types.NULL, Types.NULL],
         [Types.FLOAT, Types.FLOAT, Types.NULL, Types.NULL, Types.NULL],
         [Types.NULL, Types.NULL, Types.STRING, Types.NULL, Types.NULL],
         [Types.NULL, Types.NULL, Types.NULL, Types.NULL, Types.NULL],
         [Types.NULL, Types.NULL, Types.NULL, Types.NULL, Types.NULL]
+    ]
+
+    # noinspection DuplicatedCode
+    relational_matrix = [  # Tabla de tipos para saber el tipo que resulta de una operación relacional.
+        [Types.BOOLEAN, Types.NULL, Types.NULL, Types.NULL, Types.NULL],
+        [Types.NULL, Types.BOOLEAN, Types.NULL, Types.NULL, Types.NULL],
+        [Types.NULL, Types.NULL, Types.BOOLEAN, Types.NULL, Types.NULL],
+        [Types.NULL, Types.NULL, Types.NULL, Types.BOOLEAN, Types.NULL],
+        [Types.NULL, Types.NULL, Types.NULL, Types.NULL, Types.BOOLEAN]
     ]
 
     def __init__(self, line, column, operator, left_operand, right_operand):
@@ -26,7 +36,12 @@ class Operation(Expression):
         left_type = left_operand.kind.name
         right_type = right_operand.kind.name
 
-        dominant_type = Operation.dominant_matrix[left_operand.kind.value][right_operand.kind.value]
+        dominant_type = Types.NULL
+
+        if self.operator in {'+', '-', '*', '/', '%'}:
+            dominant_type = Operation.arithmetic_matrix[left_operand.kind.value][right_operand.kind.value]
+        elif self.operator in {'==', '!=', '>', '>=', '<', '<='}:
+            dominant_type = Operation.relational_matrix[left_operand.kind.value][right_operand.kind.value]
 
         if self.operator in {'+', '-', '*', '/', '%'}:
             if dominant_type == Types.NULL:
