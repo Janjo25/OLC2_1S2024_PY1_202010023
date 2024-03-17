@@ -5,6 +5,7 @@ from interpreter.environment.types import Types
 from interpreter.expressions.access import VariableAccess
 from interpreter.expressions.operation import Operation
 from interpreter.expressions.primitive import Primitive
+from interpreter.expressions.ternary_operator import TernaryOperator
 from interpreter.instructions.assignment import Assignment
 from interpreter.instructions.declaration import Declaration
 from interpreter.instructions.if_instruction import IfInstruction
@@ -309,6 +310,7 @@ def p_expression(p):
                   | binary_operation
                   | native_function
                   | primitive
+                  | ternary_operator
                   | unary_operation"""
     if len(p) == 2:  # Si solo hay 2 elementos, entonces es un ID o un no-terminal.
         if p.slice[1].type == "IDENTIFIER":
@@ -410,6 +412,14 @@ def p_primitive(p):
                  | NUMBER
                  | STRING"""
     p[0] = p[1]
+
+
+def p_ternary_operator(p):  # Se creó una producción para el operador ternario debido a errores con la condición.
+    """ternary_operator : binary_operation QUESTION expression COLON expression"""
+    line = p.lexer.lineno
+    column = find_column(p.lexer.lexdata, p.lexer)
+
+    p[0] = TernaryOperator(line, column, p[1], p[3], p[5])
 
 
 def p_unary_operation(p):
