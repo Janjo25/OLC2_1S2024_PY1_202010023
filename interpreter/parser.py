@@ -455,14 +455,15 @@ def p_statement_block(p):
 
 def p_if_statement(p):
     """if_statement : IF LPAREN expression RPAREN statement_block
-                    | IF LPAREN expression RPAREN statement_block ELSE statement_block"""
-    if len(p) == 6:  # Si solo hay 6 elementos, entonces no hay un 'else'.
-        line = p.lexer.lineno
-        column = find_column(p.lexer.lexdata, p.lexer)
+                    | IF LPAREN expression RPAREN statement_block ELSE statement_block
+                    | IF LPAREN expression RPAREN statement_block ELSE if_statement"""
+    line = p.lexer.lineno
+    column = find_column(p.lexer.lexdata, p.lexer)
 
+    if len(p) == 6:  # Si solo hay 6 elementos, entonces no hay un 'else-if' o un 'else'.
         p[0] = IfInstruction(line, column, p[3], p[5])
-    else:  # Si hay más de 6 elementos, entonces hay un 'else'.
-        p[0] = ('if_else_statement', p[3], p[5], p[7])
+    else:  # Si hay 8 elementos, entonces existe la posibilidad de un 'else-if' o un 'else'.
+        p[0] = IfInstruction(line, column, p[3], p[5], p[7])
 
 
 def p_switch_statement(p):
