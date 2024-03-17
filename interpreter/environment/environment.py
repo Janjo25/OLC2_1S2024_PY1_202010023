@@ -72,7 +72,10 @@ class Environment:
 
     def check_variable(self, syntax_tree, name, symbol):
         if name in self.table:  # Se revisa en la tabla de símbolos si ya existe la variable.
-            syntax_tree.set_errors(symbol.line, symbol.column, f"la variable '{name}' ya existe", "semántico")
+            line = symbol.line
+            column = symbol.column
+
+            syntax_tree.set_errors(line, column, f"la variable '{name}' ya existe", self.name, "semántico")
 
             return
 
