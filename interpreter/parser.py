@@ -528,7 +528,12 @@ def p_variable_declaration(p):
 
             p[0] = Declaration(line, column, p[2], p[4], default_value)
         else:  # Si el cuarto elemento no es un tipo, entonces hay un valor.
-            p[0] = Declaration(line, column, p[2], p[4].kind, p[4])
+            if isinstance(p[4], Primitive):  # Al ser un primitivo, se puede obtener el tipo directamente.
+                p[0] = Declaration(line, column, p[2], p[4].kind, p[4])
+            else:  # Si no es un primitivo, entonces es una operación.
+                dominant_type = Operation.dominant_matrix[p[4].left_operand.kind.value][p[4].right_operand.kind.value]
+
+                p[0] = Declaration(line, column, p[2], dominant_type, p[4])
     else:  # Si hay más de 6 elementos, entonces hay un tipo y un valor.
         if p[4] == Types.FLOAT and p[6].kind == Types.NUMBER:  # Se hace una conversión implícita de número a flotante.
             p[6].value = float(p[6].value)

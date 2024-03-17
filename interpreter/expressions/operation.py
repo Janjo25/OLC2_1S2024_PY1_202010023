@@ -2,16 +2,16 @@ from interpreter.environment.symbol import Symbol
 from interpreter.environment.types import Types
 from interpreter.interfaces.expression import Expression
 
-dominant_matrix = [  # Esto es una tabla de tipos, se usa para saber el tipo resultante de una operación.
-    [Types.NUMBER, Types.FLOAT, Types.NULL, Types.NULL, Types.NULL],
-    [Types.FLOAT, Types.FLOAT, Types.NULL, Types.NULL, Types.NULL],
-    [Types.NULL, Types.NULL, Types.STRING, Types.NULL, Types.NULL],
-    [Types.NULL, Types.NULL, Types.NULL, Types.NULL, Types.NULL],
-    [Types.NULL, Types.NULL, Types.NULL, Types.NULL, Types.NULL]
-]
-
 
 class Operation(Expression):
+    dominant_matrix = [
+        [Types.NUMBER, Types.FLOAT, Types.NULL, Types.NULL, Types.NULL],
+        [Types.FLOAT, Types.FLOAT, Types.NULL, Types.NULL, Types.NULL],
+        [Types.NULL, Types.NULL, Types.STRING, Types.NULL, Types.NULL],
+        [Types.NULL, Types.NULL, Types.NULL, Types.NULL, Types.NULL],
+        [Types.NULL, Types.NULL, Types.NULL, Types.NULL, Types.NULL]
+    ]
+
     def __init__(self, line, column, operator, left_operand, right_operand):
         self.line = line
         self.column = column
@@ -26,7 +26,7 @@ class Operation(Expression):
         left_type = left_operand.kind.name
         right_type = right_operand.kind.name
 
-        dominant_type = dominant_matrix[left_operand.kind.value][right_operand.kind.value]
+        dominant_type = Operation.dominant_matrix[left_operand.kind.value][right_operand.kind.value]
 
         if self.operator in {'+', '-', '*', '/', '%'}:
             if dominant_type == Types.NULL:
