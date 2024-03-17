@@ -528,11 +528,18 @@ def p_return_statement(p):
 
 
 def p_variable_assignment(p):
-    """variable_assignment : IDENTIFIER ASSIGN expression SEMICOLON"""
+    """variable_assignment : IDENTIFIER ASSIGN expression SEMICOLON
+                           | IDENTIFIER MINUSEQUAL expression SEMICOLON
+                           | IDENTIFIER PLUSEQUAL expression SEMICOLON"""
     line = p.lexer.lineno
     column = find_column(p.lexer.lexdata, p.lexer)
 
-    p[0] = Assignment(line, column, p[1], p[3])
+    if p[2] == "=":  # Si el segundo elemento es '=', entonces es una asignación normal.
+        p[0] = Assignment(line, column, p[1], p[3])
+    elif p[2] == "-=":  # Si el segundo elemento es '-=', entonces es una resta.
+        p[0] = Assignment(line, column, p[1], Operation(line, column, '-', VariableAccess(line, column, p[1]), p[3]))
+    else:  # Si el segundo elemento es '+=', entonces es una suma.
+        p[0] = Assignment(line, column, p[1], Operation(line, column, '+', VariableAccess(line, column, p[1]), p[3]))
 
 
 # noinspection DuplicatedCode
