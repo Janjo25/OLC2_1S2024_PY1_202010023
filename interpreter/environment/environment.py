@@ -22,11 +22,24 @@ class Environment:
                 stored_symbol = current_environment.table[name]  # Se obtiene el símbolo almacenado.
 
                 if stored_symbol.kind != symbol.kind:  # Se revisa si la variable ya existe con un tipo diferente.
+                    if stored_symbol.kind == Types.FLOAT and symbol.kind == Types.NUMBER:
+                        symbol.value = float(symbol.value)  # Se realiza una conversión implícita de número a flotante.
+                        symbol.kind = Types.FLOAT
+
+                        current_environment.table[name] = symbol
+
+                        return symbol
+
+                    symbol.value = None  # Si el tipo es diferente, se le asigna un valor nulo al símbolo existente.
+                    symbol.kind = Types.NULL
+
+                    current_environment.table[name] = symbol
+
                     error_description = f"la variable '{name}' ya existe con un tipo diferente"
 
                     syntax_tree.set_errors(line, column, error_description, current_environment.name, "semántico")
 
-                    return
+                    return symbol
 
                 current_environment.table[name] = symbol  # Se revisa en la tabla de símbolos si ya existe la variable.
 

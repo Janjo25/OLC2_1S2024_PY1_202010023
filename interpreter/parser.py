@@ -530,6 +530,10 @@ def p_variable_declaration(p):
         else:  # Si el cuarto elemento no es un tipo, entonces hay un valor.
             p[0] = Declaration(line, column, p[2], p[4].kind, p[4])
     else:  # Si hay más de 6 elementos, entonces hay un tipo y un valor.
+        if p[4] == Types.FLOAT and p[6].kind == Types.NUMBER:  # Se hace una conversión implícita de número a flotante.
+            p[6].value = float(p[6].value)
+            p[6].kind = Types.FLOAT
+
         p[0] = Declaration(line, column, p[2], p[4], p[6])
 
 
