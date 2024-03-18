@@ -3,6 +3,7 @@ import ply.yacc as yacc
 
 from interpreter.environment.types import Types
 from interpreter.expressions.access import VariableAccess
+from interpreter.expressions.break_statement import BreakStatement
 from interpreter.expressions.operation import Operation
 from interpreter.expressions.primitive import Primitive
 from interpreter.expressions.ternary_operator import TernaryOperator
@@ -10,6 +11,7 @@ from interpreter.instructions.assignment import Assignment
 from interpreter.instructions.declaration import Declaration
 from interpreter.instructions.if_instruction import IfInstruction
 from interpreter.instructions.print import Print
+from interpreter.instructions.switch_instruction import SwitchInstruction
 
 
 class Interpreter:
@@ -467,8 +469,15 @@ def p_if_statement(p):
 
 
 def p_switch_statement(p):
-    """switch_statement : SWITCH LPAREN expression RPAREN LBRACE switch_cases default_case RBRACE"""
-    p[0] = ('switch_statement', p[3], p[6], p[7])
+    """switch_statement : SWITCH LPAREN expression RPAREN LBRACE switch_cases RBRACE
+                        | SWITCH LPAREN expression RPAREN LBRACE switch_cases default_case RBRACE"""
+    line = p.lexer.lineno
+    column = find_column(p.lexer.lexdata, p.lexer)
+
+    if len(p) == 8:  # Si solo hay 8 elementos, entonces no hay un caso por defecto.
+        p[0] = SwitchInstruction(line, column, p[3], p[6])
+    else:  # Si hay 9 elementos, entonces hay un caso por defecto.
+        p[0] = SwitchInstruction(line, column, p[3], p[6], p[7])
 
 
 def p_switch_cases(p):
@@ -481,13 +490,13 @@ def p_switch_cases(p):
 
 
 def p_switch_case(p):
-    """switch_case : CASE primitive COLON statement_block"""
-    p[0] = ('switch_case', p[2], p[4])
+    """switch_case : CASE expression COLON statements"""
+    p[0] = (p[2], p[4])
 
 
 def p_default_case(p):
-    """default_case : DEFAULT COLON statement_block"""
-    p[0] = ('default_case', p[3])
+    """default_case : DEFAULT COLON statements"""
+    p[0] = p[3]
 
 
 def p_while_statement(p):
@@ -533,7 +542,10 @@ def p_transfer_statement(p):
 
 def p_break_statement(p):
     """break_statement : BREAK SEMICOLON"""
-    p[0] = ('break_statement',)
+    line = p.lexer.lineno
+    column = find_column(p.lexer.lexdata, p.lexer)
+
+    p[0] = BreakStatement(line, column)
 
 
 def p_continue_statement(p):

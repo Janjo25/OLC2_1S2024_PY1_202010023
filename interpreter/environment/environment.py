@@ -97,3 +97,19 @@ class Environment:
             return
 
         self.table[name] = symbol  # Si no existe, se agrega a la tabla de símbolos.
+
+    def is_within_control_flow(self):
+        control_flow_environments = ["case", "default", "else", "for", "if", "switch", "while"]
+
+        current_environment = self
+
+        while True:
+            if current_environment.name in control_flow_environments:  # Se revisa si el entorno es un flujo de control.
+                return True
+
+            if current_environment.previous is None:  # Si no existe un entorno anterior, se rompe el ciclo.
+                break
+            else:  # Si existe un entorno anterior, se convierte en el entorno actual.
+                current_environment = current_environment.previous
+
+        return False
