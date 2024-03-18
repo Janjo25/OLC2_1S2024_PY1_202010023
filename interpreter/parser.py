@@ -7,12 +7,12 @@ from interpreter.expressions.break_statement import BreakStatement
 from interpreter.expressions.operation import Operation
 from interpreter.expressions.primitive import Primitive
 from interpreter.expressions.ternary_operator import TernaryOperator
-from interpreter.expressions.while_instruction import WhileInstruction
 from interpreter.instructions.assignment import Assignment
 from interpreter.instructions.declaration import Declaration
 from interpreter.instructions.if_instruction import IfInstruction
 from interpreter.instructions.print import Print
 from interpreter.instructions.switch_instruction import SwitchInstruction
+from interpreter.instructions.while_instruction import WhileInstruction
 
 
 class Interpreter:
@@ -506,6 +506,7 @@ def p_while_statement(p):
     column = find_column(p.lexer.lexdata, p.lexer)
 
     p[0] = WhileInstruction(line, column, p[3], p[5])
+
 
 def p_function_declaration(p):
     """function_declaration : FUNCTION IDENTIFIER LPAREN parameters RPAREN COLON type statement_block"""
