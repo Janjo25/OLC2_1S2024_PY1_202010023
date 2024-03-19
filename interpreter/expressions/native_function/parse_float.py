@@ -18,11 +18,11 @@ class ParseFloat(Expression):
     def execute(self, syntax_tree, environment):
         result = self.expression.execute(syntax_tree, environment)
 
-        try:
+        if result.kind == Types.STRING:
             parsed_value = float(result.value)  # Se intenta convertir el valor a flotante.
 
             return Symbol(self.line, self.column, parsed_value, Types.FLOAT)
-        except ValueError:  # Si no se puede convertir el valor a flotante, se retorna un valor nulo.
+        else:  # Si no se puede convertir el valor a flotante, se retorna un valor nulo.
             error_description = 'no fue posible convertir el valor a float'
 
             syntax_tree.set_errors(self.line, self.column, error_description, environment.name, "semántico")
