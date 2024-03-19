@@ -5,6 +5,7 @@ from interpreter.environment.types import Types
 from interpreter.expressions.access import VariableAccess
 from interpreter.expressions.break_statement import BreakStatement
 from interpreter.expressions.continue_statement import ContinueStatement
+from interpreter.expressions.native_function.parse_float import ParseFloat
 from interpreter.expressions.operation import Operation
 from interpreter.expressions.primitive import Primitive
 from interpreter.expressions.return_statement import ReturnStatement
@@ -394,13 +395,13 @@ def p_native_function(p):
                        | expression DOT TOLOWERCASE LPAREN RPAREN
                        | expression DOT TOSTRING LPAREN RPAREN
                        | expression DOT TOUPPERCASE LPAREN RPAREN"""
-    if p[1] == "console" and p[2] == "." and p[3] == "log":
-        line = p.lexer.lineno
-        column = find_column(p.lexer.lexdata, p.lexer)
+    line = p.lexer.lineno
+    column = find_column(p.lexer.lexdata, p.lexer)
 
+    if p[1] == "console" and p[2] == "." and p[3] == "log":
         p[0] = Print(line, column, p[5])
     elif p[1] == "parseFloat":
-        p[0] = ("parse_float", p[3])
+        p[0] = ParseFloat(line, column, p[3])
     elif p[1] == "parseInt":
         p[0] = ("parse_int", p[3])
     elif p[1] == "typeof":
