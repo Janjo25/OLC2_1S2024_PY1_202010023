@@ -476,13 +476,13 @@ def p_update(p):
     column = find_column(p.lexer.lexdata, p.lexer)
 
     if p[2] == "--":
-        variable_value = VariableAccess(line, column, p[1])
-        operation_result = Operation(line, column, '-', variable_value, Primitive(line, column, 1, Types.NUMBER))
+        stored_value = VariableAccess(line, column, p[1])
+        operation_result = Operation(line, column, '-', stored_value, Primitive(line, column, 1, Types.NUMBER))
 
         p[0] = Assignment(line, column, p[1], operation_result)
     else:
-        variable_value = VariableAccess(line, column, p[1])
-        operation_result = Operation(line, column, '+', variable_value, Primitive(line, column, 1, Types.NUMBER))
+        stored_value = VariableAccess(line, column, p[1])
+        operation_result = Operation(line, column, '+', stored_value, Primitive(line, column, 1, Types.NUMBER))
 
         p[0] = Assignment(line, column, p[1], operation_result)
 
@@ -618,13 +618,13 @@ def p_variable_assignment(p):
     if p[2] == "=":  # Si el segundo elemento es '=', entonces es una asignación normal.
         p[0] = Assignment(line, column, p[1], p[3])
     elif p[2] == "-=":  # Si el segundo elemento es '-=', entonces es una resta.
-        variable_value = VariableAccess(line, column, p[1])  # Se obtiene el valor de la variable.
-        operation_result = Operation(line, column, '-', variable_value, p[3])  # Se realiza la resta.
+        stored_value = VariableAccess(line, column, p[1])  # Se obtiene el valor de la variable.
+        operation_result = Operation(line, column, '-', stored_value, p[3])  # Se realiza la resta.
 
         p[0] = Assignment(line, column, p[1], operation_result)  # Se le asigna el nuevo valor a la variable.
     else:  # Si el segundo elemento es '+=', entonces es una suma.
-        variable_value = VariableAccess(line, column, p[1])  # Se obtiene el valor de la variable.
-        operation_result = Operation(line, column, '+', variable_value, p[3])  # Se realiza la suma.
+        stored_value = VariableAccess(line, column, p[1])  # Se obtiene el valor de la variable.
+        operation_result = Operation(line, column, '+', stored_value, p[3])  # Se realiza la suma.
 
         p[0] = Assignment(line, column, p[1], operation_result)  # Se le asigna el nuevo valor a la variable.
 
