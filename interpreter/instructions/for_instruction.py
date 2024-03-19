@@ -27,3 +27,7 @@ class ForInstruction(Instruction):
             if isinstance(result, Symbol):
                 if result.kind == Types.BREAK:
                     break
+                if result.kind == Types.CONTINUE:
+                    continue
+                if result.kind == Types.RETURN:
+                    return result

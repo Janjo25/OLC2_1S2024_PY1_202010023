@@ -4,8 +4,10 @@ import ply.yacc as yacc
 from interpreter.environment.types import Types
 from interpreter.expressions.access import VariableAccess
 from interpreter.expressions.break_statement import BreakStatement
+from interpreter.expressions.continue_statement import ContinueStatement
 from interpreter.expressions.operation import Operation
 from interpreter.expressions.primitive import Primitive
+from interpreter.expressions.return_statement import ReturnStatement
 from interpreter.expressions.ternary_operator import TernaryOperator
 from interpreter.instructions.assignment import Assignment
 from interpreter.instructions.declaration import Declaration
@@ -586,12 +588,18 @@ def p_break_statement(p):
 
 def p_continue_statement(p):
     """continue_statement : CONTINUE SEMICOLON"""
-    p[0] = ('continue_statement',)
+    line = p.lexer.lineno
+    column = find_column(p.lexer.lexdata, p.lexer)
+
+    p[0] = ContinueStatement(line, column)
 
 
 def p_return_statement(p):
     """return_statement : RETURN expression SEMICOLON"""
-    p[0] = ('return_statement', p[2])
+    line = p.lexer.lineno
+    column = find_column(p.lexer.lexdata, p.lexer)
+
+    p[0] = ReturnStatement(line, column, p[2])
 
 
 def p_variable_assignment(p):
