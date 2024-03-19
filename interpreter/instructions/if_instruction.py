@@ -23,18 +23,21 @@ class IfInstruction(Instruction):
         condition = self.expression.execute(syntax_tree, environment)
 
         if condition.value is True:
-            new_environment = Environment(environment, "if")
+            if_environment = Environment(environment, "if")
 
-            return_value = instructions_executor(self.true_instructions, syntax_tree, new_environment)
-        else:
+            return_value = instructions_executor(self.true_instructions, syntax_tree, if_environment)
+
+            if return_value is not None:
+                return return_value
+        elif self.false_instructions is not None:  # Se debe de verificar que exista un bloque 'else-if' o 'else'.
             if isinstance(self.false_instructions, IfInstruction):
                 return_value = self.false_instructions.execute(syntax_tree, environment)
             else:
-                new_environment = Environment(environment, "else")
+                else_environment = Environment(environment, "else")
 
-                return_value = instructions_executor(self.false_instructions, syntax_tree, new_environment)
+                return_value = instructions_executor(self.false_instructions, syntax_tree, else_environment)
 
-        if return_value is not None:
-            return return_value
+            if return_value is not None:
+                return return_value
 
         return None

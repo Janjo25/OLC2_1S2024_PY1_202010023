@@ -9,6 +9,7 @@ from interpreter.expressions.primitive import Primitive
 from interpreter.expressions.ternary_operator import TernaryOperator
 from interpreter.instructions.assignment import Assignment
 from interpreter.instructions.declaration import Declaration
+from interpreter.instructions.for_instruction import ForInstruction
 from interpreter.instructions.if_instruction import IfInstruction
 from interpreter.instructions.print import Print
 from interpreter.instructions.switch_instruction import SwitchInstruction
@@ -38,7 +39,7 @@ reserved = {
     "break": "BREAK", "case": "CASE", "char": "CHAR", "console": "CONSOLE", "const": "CONST",
     "continue": "CONTINUE", "default": "DEFAULT", "else": "ELSE", "false": "FALSE", "float": "FLOAT",
     "for": "FOR", "function": "FUNCTION", "if": "IF", "indexOf": "INDEXOF", "interface": "INTERFACE",
-    "join": "JOIN", "length": "LENGTH", "log": "LOG", "null": "NULL", "number": "NUMBER",
+    "join": "JOIN", "length": "LENGTH", "log": "LOG", "null": "NULL", "number": "NUMBER", "of": "OF",
     "parseFloat": "PARSEFLOAT", "parseInt": "PARSEINT", "pop": "POP", "push": "PUSH", "return": "RETURN",
     "string": "STRING", "switch": "SWITCH", "toLowerCase": "TOLOWERCASE", "toString": "TOSTRING",
     "toUpperCase": "TOUPPERCASE", "true": "TRUE", "typeof": "TYPEOF", "var": "VAR", "while": "WHILE"
@@ -46,9 +47,10 @@ reserved = {
 
 # noinspection SpellCheckingInspection
 tokens = [
-    "AND", "ASSIGN", "COLON", "COMMA", "COMMENT_MULTI", "COMMENT_SINGLE", "DIVIDE", "DOT", "EQ", "GE", "GT",
-    "IDENTIFIER", "LBRACE", "LBRACKET", "LE", "LPAREN", "LT", "MINUS", "MINUSEQUAL", "MOD", "NEQ", "NOT", "OR",
-    "PLUS", "PLUSEQUAL", "QUESTION", "RBRACE", "RBRACKET", "RPAREN", "SEMICOLON", "TIMES"
+    "AND", "ASSIGN", "COLON", "COMMA", "COMMENT_MULTI", "COMMENT_SINGLE", "DECREMENT", "DIVIDE", "DOT", "EQ",
+    "GE", "GT", "IDENTIFIER", "INCREMENT", "LBRACE", "LBRACKET", "LE", "LPAREN", "LT", "MINUS", "MINUSEQUAL",
+    "MOD", "NEQ", "NOT", "OR", "PLUS", "PLUSEQUAL", "QUESTION", "RBRACE", "RBRACKET", "RPAREN", "SEMICOLON",
+    "TIMES"
 ]
 
 tokens += list(reserved.values())
@@ -96,6 +98,8 @@ t_OR = r"\|\|"
 """Operadores de Asignación"""
 
 t_ASSIGN = r"="
+t_DECREMENT = r"--"
+t_INCREMENT = r"\+\+"
 t_MINUSEQUAL = r"-="
 t_PLUSEQUAL = r"\+="
 
@@ -442,9 +446,37 @@ def p_flow_statements(p):
     p[0] = p[1]
 
 
+"""Se usó 'statement' y 'expression_statement' porque estas producciones ya incluyen el ';'."""
+
+
 def p_for_statement(p):
-    """for_statement : FOR LPAREN expression SEMICOLON expression SEMICOLON expression RPAREN statement_block"""
-    p[0] = ('for_statement', p[3], p[5], p[7], p[9])
+    """for_statement : FOR LPAREN expression OF expression RPAREN statement_block
+                     | FOR LPAREN statement expression_statement update RPAREN statement_block"""
+    line = p.lexer.lineno
+    column = find_column(p.lexer.lexdata, p.lexer)
+
+    if p[3] == "of":  # Si el tercer elemento es 'of', entonces es un 'for-of'.
+        p[0] = ("for_of", p[5], p[7])
+    else:  # Si el tercer elemento no es 'of', entonces es un 'for'.
+        p[0] = ForInstruction(line, column, p[3], p[4], p[5], p[7])
+
+
+def p_update(p):
+    """update : IDENTIFIER DECREMENT
+              | IDENTIFIER INCREMENT"""
+    line = p.lexer.lineno
+    column = find_column(p.lexer.lexdata, p.lexer)
+
+    if p[2] == "--":
+        variable_value = VariableAccess(line, column, p[1])
+        operation_result = Operation(line, column, '-', variable_value, Primitive(line, column, 1, Types.NUMBER))
+
+        p[0] = Assignment(line, column, p[1], operation_result)
+    else:
+        variable_value = VariableAccess(line, column, p[1])
+        operation_result = Operation(line, column, '+', variable_value, Primitive(line, column, 1, Types.NUMBER))
+
+        p[0] = Assignment(line, column, p[1], operation_result)
 
 
 def p_statement_block(p):
@@ -572,9 +604,15 @@ def p_variable_assignment(p):
     if p[2] == "=":  # Si el segundo elemento es '=', entonces es una asignación normal.
         p[0] = Assignment(line, column, p[1], p[3])
     elif p[2] == "-=":  # Si el segundo elemento es '-=', entonces es una resta.
-        p[0] = Assignment(line, column, p[1], Operation(line, column, '-', VariableAccess(line, column, p[1]), p[3]))
+        variable_value = VariableAccess(line, column, p[1])  # Se obtiene el valor de la variable.
+        operation_result = Operation(line, column, '-', variable_value, p[3])  # Se realiza la resta.
+
+        p[0] = Assignment(line, column, p[1], operation_result)  # Se le asigna el nuevo valor a la variable.
     else:  # Si el segundo elemento es '+=', entonces es una suma.
-        p[0] = Assignment(line, column, p[1], Operation(line, column, '+', VariableAccess(line, column, p[1]), p[3]))
+        variable_value = VariableAccess(line, column, p[1])  # Se obtiene el valor de la variable.
+        operation_result = Operation(line, column, '+', variable_value, p[3])  # Se realiza la suma.
+
+        p[0] = Assignment(line, column, p[1], operation_result)  # Se le asigna el nuevo valor a la variable.
 
 
 # noinspection DuplicatedCode
