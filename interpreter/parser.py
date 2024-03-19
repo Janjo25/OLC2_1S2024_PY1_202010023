@@ -6,6 +6,11 @@ from interpreter.expressions.access import VariableAccess
 from interpreter.expressions.break_statement import BreakStatement
 from interpreter.expressions.continue_statement import ContinueStatement
 from interpreter.expressions.native_function.parse_float import ParseFloat
+from interpreter.expressions.native_function.parse_int import ParseInt
+from interpreter.expressions.native_function.to_lowercase import ToLowerCase
+from interpreter.expressions.native_function.to_string import ToString
+from interpreter.expressions.native_function.to_uppercase import ToUpperCase
+from interpreter.expressions.native_function.typeof import Typeof
 from interpreter.expressions.operation import Operation
 from interpreter.expressions.primitive import Primitive
 from interpreter.expressions.return_statement import ReturnStatement
@@ -391,7 +396,7 @@ def p_native_function(p):
     """native_function : CONSOLE DOT LOG LPAREN arguments RPAREN
                        | PARSEFLOAT LPAREN expression RPAREN
                        | PARSEINT LPAREN expression RPAREN
-                       | TYPEOF LPAREN expression RPAREN
+                       | TYPEOF expression
                        | expression DOT TOLOWERCASE LPAREN RPAREN
                        | expression DOT TOSTRING LPAREN RPAREN
                        | expression DOT TOUPPERCASE LPAREN RPAREN"""
@@ -403,15 +408,15 @@ def p_native_function(p):
     elif p[1] == "parseFloat":
         p[0] = ParseFloat(line, column, p[3])
     elif p[1] == "parseInt":
-        p[0] = ("parse_int", p[3])
+        p[0] = ParseInt(line, column, p[3])
     elif p[1] == "typeof":
-        p[0] = ("type_of", p[3])
+        p[0] = Typeof(line, column, p[2])
     elif p[2] == "." and p[3] == "toLowerCase":
-        p[0] = ("to_lowercase", p[1])
+        p[0] = ToLowerCase(line, column, p[1])
     elif p[2] == "." and p[3] == "toString":
-        p[0] = ("to_string", p[1])
+        p[0] = ToString(line, column, p[1])
     elif p[2] == "." and p[3] == "toUpperCase":
-        p[0] = ("to_uppercase", p[1])
+        p[0] = ToUpperCase(line, column, p[1])
 
 
 def p_primitive(p):
