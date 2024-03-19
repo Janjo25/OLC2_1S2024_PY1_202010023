@@ -1,7 +1,7 @@
 from interpreter.interfaces.instruction import Instruction
 
 
-class Declaration(Instruction):
+class VariableDeclaration(Instruction):
     def __init__(self, line, column, name, kind, expressions):
         self.line = line
         self.column = column

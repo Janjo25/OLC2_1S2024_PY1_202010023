@@ -16,11 +16,11 @@ from interpreter.expressions.return_statement import ReturnStatement
 from interpreter.expressions.ternary_operator import TernaryOperator
 from interpreter.expressions.variable_access import VariableAccess
 from interpreter.instructions.assignment import Assignment
-from interpreter.instructions.declaration import Declaration
 from interpreter.instructions.for_instruction import ForInstruction
 from interpreter.instructions.if_instruction import IfInstruction
 from interpreter.instructions.print import Print
 from interpreter.instructions.switch_instruction import SwitchInstruction
+from interpreter.instructions.variable_declaration import VariableDeclaration
 from interpreter.instructions.while_instruction import WhileInstruction
 
 
@@ -304,13 +304,13 @@ def p_constant_declaration(p):
     constant_name = f"{p[2]}-constant"  # Se le agrega un sufijo para diferenciarla de las variables.
 
     if len(p) == 6:  # Si hay 6 elementos, entonces no hay un tipo o un valor.
-        p[0] = Declaration(line, column, constant_name, p[4].kind, p[4])
+        p[0] = VariableDeclaration(line, column, constant_name, p[4].kind, p[4])
     else:  # Si hay más de 6 elementos, entonces hay un tipo y un valor.
         if p[4] == Types.FLOAT and p[6].kind == Types.NUMBER:  # Se hace una conversión implícita de número a flotante.
             p[6].value = float(p[6].value)
             p[6].kind = Types.FLOAT
 
-        p[0] = Declaration(line, column, constant_name, p[4], p[6])
+        p[0] = VariableDeclaration(line, column, constant_name, p[4], p[6])
 
 
 def p_expression_statement(p):
@@ -641,10 +641,10 @@ def p_variable_declaration(p):
         if isinstance(p[4], Types):  # Si el cuarto elemento es un tipo, entonces no hay un valor, solo un tipo.
             default_value = Primitive(line, column, default_values.get(p[4]), p[4])  # Se obtiene el valor por defecto.
 
-            p[0] = Declaration(line, column, p[2], p[4], default_value)
+            p[0] = VariableDeclaration(line, column, p[2], p[4], default_value)
         else:  # Si el cuarto elemento no es un tipo, entonces hay un valor.
             if isinstance(p[4], Primitive):  # Al ser un primitivo, se puede obtener el tipo directamente.
-                p[0] = Declaration(line, column, p[2], p[4].kind, p[4])
+                p[0] = VariableDeclaration(line, column, p[2], p[4].kind, p[4])
             else:  # Si no es un primitivo, entonces es una operación.
                 left_type_value = p[4].left_operand.kind.value
                 right_type_value = p[4].right_operand.kind.value
@@ -656,13 +656,13 @@ def p_variable_declaration(p):
                 elif p[4].operator in {'==', '!=', '>', '>=', '<', '<='}:
                     dominant_type = Operation.relational_matrix[left_type_value][right_type_value]
 
-                p[0] = Declaration(line, column, p[2], dominant_type, p[4])
+                p[0] = VariableDeclaration(line, column, p[2], dominant_type, p[4])
     else:  # Si hay más de 6 elementos, entonces hay un tipo y un valor.
         if p[4] == Types.FLOAT and p[6].kind == Types.NUMBER:  # Se hace una conversión implícita de número a flotante.
             p[6].value = float(p[6].value)
             p[6].kind = Types.FLOAT
 
-        p[0] = Declaration(line, column, p[2], p[4], p[6])
+        p[0] = VariableDeclaration(line, column, p[2], p[4], p[6])
 
 
 def p_error(p):
