@@ -2,7 +2,6 @@ import ply.lex as lex
 import ply.yacc as yacc
 
 from interpreter.environment.types import Types
-from interpreter.expressions.access import VariableAccess
 from interpreter.expressions.break_statement import BreakStatement
 from interpreter.expressions.continue_statement import ContinueStatement
 from interpreter.expressions.native_function.parse_float import ParseFloat
@@ -15,6 +14,7 @@ from interpreter.expressions.operation import Operation
 from interpreter.expressions.primitive import Primitive
 from interpreter.expressions.return_statement import ReturnStatement
 from interpreter.expressions.ternary_operator import TernaryOperator
+from interpreter.expressions.variable_access import VariableAccess
 from interpreter.instructions.assignment import Assignment
 from interpreter.instructions.declaration import Declaration
 from interpreter.instructions.for_instruction import ForInstruction
