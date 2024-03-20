@@ -2,6 +2,8 @@ import ply.lex as lex
 import ply.yacc as yacc
 
 from interpreter.environment.types import Types
+from interpreter.expressions.array import Array
+from interpreter.expressions.array_access import ArrayAccess
 from interpreter.expressions.break_statement import BreakStatement
 from interpreter.expressions.continue_statement import ContinueStatement
 from interpreter.expressions.native_function.parse_float import ParseFloat
@@ -15,6 +17,7 @@ from interpreter.expressions.primitive import Primitive
 from interpreter.expressions.return_statement import ReturnStatement
 from interpreter.expressions.ternary_operator import TernaryOperator
 from interpreter.expressions.variable_access import VariableAccess
+from interpreter.instructions.array_declaration import ArrayDeclaration
 from interpreter.instructions.assignment import Assignment
 from interpreter.instructions.for_instruction import ForInstruction
 from interpreter.instructions.if_instruction import IfInstruction
@@ -284,7 +287,8 @@ def p_statements(p):
 
 
 def p_statement(p):
-    """statement : constant_declaration
+    """statement : array_declaration
+                 | constant_declaration
                  | expression_statement
                  | flow_statements
                  | function_declaration
@@ -292,6 +296,27 @@ def p_statement(p):
                  | variable_assignment
                  | variable_declaration"""
     p[0] = p[1]
+
+
+def p_array_declaration(p):
+    """array_declaration : CONST IDENTIFIER COLON type LBRACKET RBRACKET ASSIGN LBRACKET RBRACKET SEMICOLON
+                         | CONST IDENTIFIER COLON type LBRACKET RBRACKET ASSIGN LBRACKET arguments RBRACKET SEMICOLON
+                         | CONST IDENTIFIER COLON type LBRACKET RBRACKET ASSIGN expression SEMICOLON
+                         | VAR IDENTIFIER COLON type LBRACKET RBRACKET ASSIGN LBRACKET RBRACKET SEMICOLON
+                         | VAR IDENTIFIER COLON type LBRACKET RBRACKET ASSIGN LBRACKET arguments RBRACKET SEMICOLON
+                         | VAR IDENTIFIER COLON type LBRACKET RBRACKET ASSIGN expression SEMICOLON"""
+    line = p.lexer.lineno
+    column = find_column(p.lexer.lexdata, p.lexer)
+
+    if p[1] == "const":  # Si el primer elemento es 'const', se debe de agregar un sufijo al nombre.
+        p[2] = f"{p[2]}-constant"
+
+    if len(p) == 10:  # Si hay 10 elementos, entonces se le está asignando una expresión.
+        p[0] = ArrayDeclaration(line, column, p[2], p[4], p[8])
+    elif len(p) == 11:  # Si hay 11 elementos, entonces se le está asignando un arreglo vacío.
+        p[0] = ArrayDeclaration(line, column, p[2], p[4], Array(line, column))
+    else:  # Si hay 12 elementos, entonces se le está asignando un arreglo con valores.
+        p[0] = ArrayDeclaration(line, column, p[2], p[4], Array(line, column, p[9]))
 
 
 # noinspection DuplicatedCode
@@ -320,6 +345,7 @@ def p_expression_statement(p):
 
 def p_expression(p):
     """expression : IDENTIFIER
+                  | IDENTIFIER LBRACKET expression RBRACKET
                   | IDENTIFIER LPAREN arguments RPAREN
                   | LPAREN expression RPAREN
                   | binary_operation
@@ -335,12 +361,18 @@ def p_expression(p):
             p[0] = VariableAccess(line, column, p[1])
         else:
             p[0] = p[1]
-    elif len(p) == 3:  # Si hay 3 elementos, entonces es una negación.
-        p[0] = ("not_expression", p[2])
     elif len(p) == 4:  # Si hay 4 elementos, entonces es una expresión entre paréntesis.
         p[0] = p[2]
-    else:  # Si hay 5 elementos, entonces es una llamada a función.
-        p[0] = ("function_call", p[1], p[3])
+    else:  # Si hay 5 elementos, entonces es un acceso a un arreglo o una llamada a una función con argumentos.
+        if p[2] == "(":
+            p[0] = ("function_call", p[1], p[3])
+        else:
+            line = p.lexer.lineno
+            column = find_column(p.lexer.lexdata, p.lexer)
+
+            stored_value = VariableAccess(line, column, p[1])
+
+            p[0] = ArrayAccess(line, column, stored_value, p[3])
 
 
 def p_arguments(p):
