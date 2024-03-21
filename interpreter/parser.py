@@ -259,14 +259,14 @@ def t_error(t):  # Función para manejar errores léxicos.
 
 
 precedence = (
-    ("left", "LPAREN", "RPAREN", "LBRACKET", "RBRACKET"),  # () []
-    ("right", "NOT", "MINUS"),  # ! -
-    ("left", "DIVIDE", "MOD", "TIMES"),  # / % *
-    ("left", "PLUS", "MINUS"),  # + -
-    ("left", "LT", "LE", "GT", "GE"),  # < <= > >=
-    ("left", "EQ", "NEQ"),  # == !=
-    ("left", "AND"),  # &&
     ("left", "OR"),  # ||
+    ("left", "AND"),  # &&
+    ("left", "EQ", "NEQ"),  # == !=
+    ("left", "LT", "LE", "GT", "GE"),  # < <= > >=
+    ("left", "PLUS", "MINUS"),  # + -
+    ("left", "DIVIDE", "MOD", "TIMES"),  # / % *
+    ("right", "NOT", "MINUS"),  # ! -
+    ("left", "LPAREN", "RPAREN", "LBRACKET", "RBRACKET"),  # () []
 )
 
 """Cuando se usa 'p[0] = p[x] + [p[y]]', se está concatenando listas."""
@@ -348,16 +348,18 @@ def p_expression(p):
                   | IDENTIFIER LBRACKET expression RBRACKET
                   | IDENTIFIER LPAREN arguments RPAREN
                   | LPAREN expression RPAREN
-                  | binary_operation
+                  | arithmetic_operation
+                  | logical_operation
                   | native_function
                   | primitive
+                  | relational_operation
                   | ternary_operator
                   | unary_operation"""
+    line = p.lexer.lineno
+    column = find_column(p.lexer.lexdata, p.lexer)
+
     if len(p) == 2:  # Si solo hay 2 elementos, entonces es un ID o un no-terminal.
         if p.slice[1].type == "IDENTIFIER":
-            line = p.lexer.lineno
-            column = find_column(p.lexer.lexdata, p.lexer)
-
             p[0] = VariableAccess(line, column, p[1])
         else:
             p[0] = p[1]
@@ -389,39 +391,37 @@ def p_argument(p):
     p[0] = p[1]
 
 
-def p_binary_operation(p):
-    """binary_operation : expression arithmetic_operator expression
-                        | expression comparison_operator expression
-                        | expression logical_operator expression"""
+def p_arithmetic_operation(p):
+    """arithmetic_operation : expression DIVIDE expression
+                            | expression MINUS expression
+                            | expression MOD expression
+                            | expression PLUS expression
+                            | expression TIMES expression"""
     line = p.lexer.lineno
     column = find_column(p.lexer.lexdata, p.lexer)
 
-    p[0] = Operation(line, column, p[2], p[1], p[3])
+    if p[2] == '/':
+        p[0] = Operation(line, column, '/', p[1], p[3])
+    elif p[2] == '-':
+        p[0] = Operation(line, column, '-', p[1], p[3])
+    elif p[2] == '%':
+        p[0] = Operation(line, column, '%', p[1], p[3])
+    elif p[2] == '+':
+        p[0] = Operation(line, column, '+', p[1], p[3])
+    elif p[2] == '*':
+        p[0] = Operation(line, column, '*', p[1], p[3])
 
 
-def p_arithmetic_operator(p):
-    """arithmetic_operator : DIVIDE
-                           | MINUS
-                           | MOD
-                           | PLUS
-                           | TIMES"""
-    p[0] = p[1]
+def p_logical_operation(p):
+    """logical_operation : expression AND expression
+                         | expression OR expression"""
+    line = p.lexer.lineno
+    column = find_column(p.lexer.lexdata, p.lexer)
 
-
-def p_comparison_operator(p):
-    """comparison_operator : EQ
-                           | GE
-                           | GT
-                           | LE
-                           | LT
-                           | NEQ"""
-    p[0] = p[1]
-
-
-def p_logical_operator(p):
-    """logical_operator : AND
-                        | OR"""
-    p[0] = p[1]
+    if p[2] == '&&':
+        p[0] = Operation(line, column, '&&', p[1], p[3])
+    elif p[2] == '||':
+        p[0] = Operation(line, column, '||', p[1], p[3])
 
 
 def p_native_function(p):
@@ -461,8 +461,32 @@ def p_primitive(p):
     p[0] = p[1]
 
 
+def p_relational_operation(p):
+    """relational_operation : expression EQ expression
+                            | expression GE expression
+                            | expression GT expression
+                            | expression LE expression
+                            | expression LT expression
+                            | expression NEQ expression"""
+    line = p.lexer.lineno
+    column = find_column(p.lexer.lexdata, p.lexer)
+
+    if p[2] == '==':
+        p[0] = Operation(line, column, '==', p[1], p[3])
+    elif p[2] == '>=':
+        p[0] = Operation(line, column, '>=', p[1], p[3])
+    elif p[2] == '>':
+        p[0] = Operation(line, column, '>', p[1], p[3])
+    elif p[2] == '<=':
+        p[0] = Operation(line, column, '<=', p[1], p[3])
+    elif p[2] == '<':
+        p[0] = Operation(line, column, '<', p[1], p[3])
+    elif p[2] == '!=':
+        p[0] = Operation(line, column, '!=', p[1], p[3])
+
+
 def p_ternary_operator(p):  # Se creó una producción para el operador ternario debido a errores con la condición.
-    """ternary_operator : binary_operation QUESTION expression COLON expression"""
+    """ternary_operator : expression QUESTION expression COLON expression"""
     line = p.lexer.lineno
     column = find_column(p.lexer.lexdata, p.lexer)
 
