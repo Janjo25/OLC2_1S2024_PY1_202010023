@@ -6,8 +6,12 @@ from interpreter.expressions.array import Array
 from interpreter.expressions.array_access import ArrayAccess
 from interpreter.expressions.break_statement import BreakStatement
 from interpreter.expressions.continue_statement import ContinueStatement
+from interpreter.expressions.native_function.index_of import IndexOf
+from interpreter.expressions.native_function.join import Join
+from interpreter.expressions.native_function.length import Length
 from interpreter.expressions.native_function.parse_float import ParseFloat
 from interpreter.expressions.native_function.parse_int import ParseInt
+from interpreter.expressions.native_function.pop import Pop
 from interpreter.expressions.native_function.to_lowercase import ToLowerCase
 from interpreter.expressions.native_function.to_string import ToString
 from interpreter.expressions.native_function.to_uppercase import ToUpperCase
@@ -21,6 +25,7 @@ from interpreter.instructions.array_declaration import ArrayDeclaration
 from interpreter.instructions.assignment import Assignment
 from interpreter.instructions.for_instruction import ForInstruction
 from interpreter.instructions.if_instruction import IfInstruction
+from interpreter.instructions.native_function.push import Push
 from interpreter.instructions.print import Print
 from interpreter.instructions.switch_instruction import SwitchInstruction
 from interpreter.instructions.variable_declaration import VariableDeclaration
@@ -426,6 +431,11 @@ def p_logical_operation(p):
 
 def p_native_function(p):
     """native_function : CONSOLE DOT LOG LPAREN arguments RPAREN
+                       | IDENTIFIER DOT INDEXOF LPAREN expression RPAREN
+                       | IDENTIFIER DOT JOIN LPAREN RPAREN
+                       | IDENTIFIER DOT LENGTH
+                       | IDENTIFIER DOT POP LPAREN RPAREN
+                       | IDENTIFIER DOT PUSH LPAREN primitive RPAREN
                        | PARSEFLOAT LPAREN expression RPAREN
                        | PARSEINT LPAREN expression RPAREN
                        | TYPEOF expression
@@ -435,7 +445,7 @@ def p_native_function(p):
     line = p.lexer.lineno
     column = find_column(p.lexer.lexdata, p.lexer)
 
-    if p[1] == "console" and p[2] == "." and p[3] == "log":
+    if p[1] == "console":
         p[0] = Print(line, column, p[5])
     elif p[1] == "parseFloat":
         p[0] = ParseFloat(line, column, p[3])
@@ -443,6 +453,24 @@ def p_native_function(p):
         p[0] = ParseInt(line, column, p[3])
     elif p[1] == "typeof":
         p[0] = Typeof(line, column, p[2])
+    elif p[2] == "." and p[3] == "indexOf":
+        stored_value = VariableAccess(line, column, p[1])
+
+        p[0] = IndexOf(line, column, stored_value, p[5])
+    elif p[2] == "." and p[3] == "join":
+        stored_value = VariableAccess(line, column, p[1])
+
+        p[0] = Join(line, column, stored_value)
+    elif p[2] == "." and p[3] == "length":
+        p[0] = Length(line, column, p[1])
+    elif p[2] == "." and p[3] == "pop":
+        stored_value = VariableAccess(line, column, p[1])
+
+        p[0] = Pop(line, column, stored_value)
+    elif p[2] == "." and p[3] == "push":
+        stored_value = VariableAccess(line, column, p[1])
+
+        p[0] = Push(line, column, stored_value, p[5])
     elif p[2] == "." and p[3] == "toLowerCase":
         p[0] = ToLowerCase(line, column, p[1])
     elif p[2] == "." and p[3] == "toString":
