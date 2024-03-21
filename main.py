@@ -51,6 +51,11 @@ def execute_code():
     console_tab.insert("1.0", str(syntax_tree.get_console()))  # Se inserta el contenido de la consola.
     console_tab.config(state="disabled")  # Se deshabilita la pestaña de consola.
 
+    symbol_tab.config(state="normal")  # Se habilita la pestaña de tabla de símbolos.
+    symbol_tab.delete("1.0", tk.END)  # Se borra el contenido de la pestaña de tabla de símbolos.
+    symbol_tab.insert("1.0", format_symbols(syntax_tree.get_symbols()))
+    symbol_tab.config(state="disabled")  # Se deshabilita la pestaña de tabla de símbolos.
+
     errors_tab.config(state="normal")  # Se habilita la pestaña de errores.
     errors_tab.delete("1.0", tk.END)  # Se borra el contenido de la pestaña de errores.
     errors_tab.insert("1.0", format_errors(syntax_tree.get_errors()))
@@ -61,14 +66,73 @@ def show_reports():
     messagebox.showinfo("Reportes", "Funcionalidad de informes no implementada.")
 
 
+def format_symbols(symbols):
+    """Se guardan los campos de los símbolos en listas separadas, incluyendo el encabezado para cada campo."""
+
+    names = [symbol["name"] for symbol in symbols] + ["Nombre"]
+    symbol_kinds = [symbol["symbol_kind"] for symbol in symbols] + ["Tipo de Símbolo"]
+    data_kinds = [str(symbol["data_kind"]) for symbol in symbols] + ["Tipo de Dato"]
+    scopes = [symbol["scope"] for symbol in symbols] + ["Entorno"]
+    lines = [str(symbol["line"]) for symbol in symbols] + ["Línea"]
+    columns = [str(symbol["column"]) for symbol in symbols] + ["Columna"]
+
+    """Se calcula el ancho máximo para cada columna."""
+
+    max_lens = {
+        "name": max(map(len, names)),
+        "symbol_kind": max(map(len, symbol_kinds)),
+        "data_kind": max(map(len, data_kinds)),
+        "scope": max(map(len, scopes)),
+        "line": max(map(len, lines)),
+        "column": max(map(len, columns))
+    }
+
+    """Se le da formato a los encabezados de las columnas."""
+
+    header_format = "{:{name}} | {:{symbol_kind}} | {:{data_kind}} | {:{scope}} | {:{line}} | {:{column}}"
+
+    header = header_format.format(
+        "Nombre".center(max_lens["name"]),
+        "Tipo de Símbolo".center(max_lens["symbol_kind"]),
+        "Tipo de Dato".center(max_lens["data_kind"]),
+        "Entorno".center(max_lens["scope"]),
+        "Línea".center(max_lens["line"]),
+        "Columna".center(max_lens["column"]),
+        **max_lens
+    )
+
+    separator = '-' * len(header)  # Se crea un separador para los encabezados basado en el ancho máximo.
+
+    formatted_symbols = [header, separator]  # Se inicializa la lista de símbolos con los encabezados y el separador.
+
+    """Se le da formato a cada símbolo."""
+
+    symbol_format = "{:{name}} | {:{symbol_kind}} | {:{data_kind}} | {:{scope}} | {:{line}} | {:{column}}"
+
+    for symbol in symbols:
+        formatted_symbol = symbol_format.format(
+            symbol["name"].center(max_lens["name"]),
+            symbol["symbol_kind"].center(max_lens["symbol_kind"]),
+            str(symbol["data_kind"]).center(max_lens["data_kind"]),
+            symbol["scope"].center(max_lens["scope"]),
+            str(symbol["line"]).center(max_lens["line"]),
+            str(symbol["column"]).center(max_lens["column"]),
+            **max_lens
+        )
+
+        formatted_symbols.append(formatted_symbol)
+
+    return "\n".join(formatted_symbols)
+
+
 def format_errors(errors):
     """Se guardan los campos de los errores en listas separadas, incluyendo el encabezado para cada campo."""
 
-    descriptions = [error.description for error in errors] + ["Descripción"]
-    scopes = [error.scope for error in errors] + ["Entorno"]
-    lines = [str(error.line) for error in errors] + ["Línea"]
-    columns = [str(error.column) for error in errors] + ["Columna"]
-    kinds = [error.kind for error in errors] + ["Tipo de Error"]
+    descriptions = [error["description"] for error in errors] + ["Descripción"]
+    scopes = [error["scope"] for error in errors] + ["Entorno"]
+    lines = [str(error["line"]) for error in errors] + ["Línea"]
+    columns = [str(error["column"]) for error in errors] + ["Columna"]
+    kinds = [error["kind"] for error in errors] + ["Tipo de Error"]
 
     """Se calcula el ancho máximo para cada columna."""
 
@@ -77,7 +141,7 @@ def format_errors(errors):
         "scope": max(map(len, scopes)),
         "line": max(map(len, lines)),
         "column": max(map(len, columns)),
-        "kind": max(map(len, kinds)),
+        "kind": max(map(len, kinds))
     }
 
     """Se le da formato a los encabezados de las columnas."""
@@ -103,11 +167,11 @@ def format_errors(errors):
 
     for error in errors:
         formatted_error = error_format.format(
-            error.description.center(max_lens["description"]),
-            error.scope.center(max_lens["scope"]),
-            str(error.line).center(max_lens["line"]),
-            str(error.column).center(max_lens["column"]),
-            error.kind.center(max_lens["kind"]),
+            error["description"].center(max_lens["description"]),
+            error["scope"].center(max_lens["scope"]),
+            str(error["line"]).center(max_lens["line"]),
+            str(error["column"]).center(max_lens["column"]),
+            error["kind"].center(max_lens["kind"]),
             **max_lens
         )
 
@@ -152,9 +216,9 @@ tab_control = ttk.Notebook(root)  # Se crea un control de pestañas.
 console_tab = scrolledtext.ScrolledText(tab_control, wrap=tk.WORD)  # Se crea una pestaña para la consola.
 console_tab.config(state="disabled", wrap=tk.NONE, font=("Courier", 10))
 symbol_tab = tk.Text(tab_control)  # Se crea una pestaña para la tabla de símbolos.
-symbol_tab.config(state="disabled", wrap=tk.NONE, font=("Courier", 7))
+symbol_tab.config(state="disabled", wrap=tk.NONE, font=("Courier", 8))
 errors_tab = tk.Text(tab_control)  # Se crea una pestaña para los errores.
-errors_tab.config(state="disabled", wrap=tk.NONE, font=("Courier", 7))
+errors_tab.config(state="disabled", wrap=tk.NONE, font=("Courier", 8))
 
 tab_control.add(console_tab, text="Consola")
 tab_control.add(symbol_tab, text="Tabla de Símbolos")

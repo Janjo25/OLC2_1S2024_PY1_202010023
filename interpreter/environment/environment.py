@@ -98,6 +98,8 @@ class Environment:
 
         self.table[name] = symbol  # Si no existe, se agrega a la tabla de símbolos.
 
+        syntax_tree.set_symbols(name, "variable", symbol.kind, self.name, symbol.line, symbol.column)
+
     def is_within_control_flow(self):
         control_flow_environments = ["case", "for", "switch", "while"]
 
