@@ -462,7 +462,9 @@ def p_native_function(p):
 
         p[0] = Join(line, column, stored_value)
     elif p[2] == "." and p[3] == "length":
-        p[0] = Length(line, column, p[1])
+        stored_value = VariableAccess(line, column, p[1])
+
+        p[0] = Length(line, column, stored_value)
     elif p[2] == "." and p[3] == "pop":
         stored_value = VariableAccess(line, column, p[1])
 
