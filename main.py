@@ -203,13 +203,11 @@ info_label_frame.grid_columnconfigure(0, weight=1)  # Se crean espaciadores para
 info_label = tk.Label(info_label_frame, text="Información de Salida", font=("Arial", 14))
 info_label.grid(row=0, column=0, sticky="ew")
 
-code_editor = scrolledtext.ScrolledText(root, wrap=tk.WORD, width=60, height=20)  # Se crea un editor de texto.
+code_editor = scrolledtext.ScrolledText(root, wrap=tk.WORD, width=60, height=25)  # Se crea un editor de texto.
 code_editor.grid(row=1, column=0, padx=10, pady=0, sticky="nsew")  # Se coloca el editor en la ventana principal.
 
 execute_button = tk.Button(root, text="Ejecutar", command=execute_code)  # Se crea un botón para ejecutar.
 execute_button.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
-report_button = tk.Button(root, text="Mostar Reportes", command=show_reports)  # Se crea un botón para reportes.
-report_button.grid(row=3, column=0, padx=10, pady=10, sticky="ew")
 
 tab_control = ttk.Notebook(root)  # Se crea un control de pestañas.
 
