@@ -6,8 +6,11 @@ from interpreter.expressions.array import Array
 from interpreter.expressions.array_access import ArrayAccess
 from interpreter.expressions.break_statement import BreakStatement
 from interpreter.expressions.continue_statement import ContinueStatement
+from interpreter.expressions.function_call import FunctionCall
+from interpreter.expressions.interface_access import InterfaceAccess
 from interpreter.expressions.native_function.index_of import IndexOf
 from interpreter.expressions.native_function.join import Join
+from interpreter.expressions.native_function.keys import Keys
 from interpreter.expressions.native_function.length import Length
 from interpreter.expressions.native_function.parse_float import ParseFloat
 from interpreter.expressions.native_function.parse_int import ParseInt
@@ -16,6 +19,7 @@ from interpreter.expressions.native_function.to_lowercase import ToLowerCase
 from interpreter.expressions.native_function.to_string import ToString
 from interpreter.expressions.native_function.to_uppercase import ToUpperCase
 from interpreter.expressions.native_function.typeof import Typeof
+from interpreter.expressions.native_function.values import Values
 from interpreter.expressions.operation import Operation
 from interpreter.expressions.primitive import Primitive
 from interpreter.expressions.return_statement import ReturnStatement
@@ -24,7 +28,12 @@ from interpreter.expressions.variable_access import VariableAccess
 from interpreter.instructions.array_declaration import ArrayDeclaration
 from interpreter.instructions.assignment import Assignment
 from interpreter.instructions.for_instruction import ForInstruction
+from interpreter.instructions.for_of_instruction import ForOfInstruction
+from interpreter.instructions.function_declaration import FunctionDeclaration
 from interpreter.instructions.if_instruction import IfInstruction
+from interpreter.instructions.interface_assignment import InterfaceAssignment
+from interpreter.instructions.interface_declaration import InterfaceDeclaration
+from interpreter.instructions.interface_instantiation import InterfaceInstantiation
 from interpreter.instructions.native_function.push import Push
 from interpreter.instructions.print import Print
 from interpreter.instructions.switch_instruction import SwitchInstruction
@@ -51,14 +60,14 @@ default_values = {
 
 # noinspection SpellCheckingInspection
 reserved = {
-    "Keys": "KEYS", "Object": "OBJECT", "Values": "VALUES", "array": "ARRAY", "boolean": "BOOLEAN",
-    "break": "BREAK", "case": "CASE", "char": "CHAR", "console": "CONSOLE", "const": "CONST",
-    "continue": "CONTINUE", "default": "DEFAULT", "else": "ELSE", "false": "FALSE", "float": "FLOAT",
-    "for": "FOR", "function": "FUNCTION", "if": "IF", "indexOf": "INDEXOF", "interface": "INTERFACE",
-    "join": "JOIN", "length": "LENGTH", "log": "LOG", "null": "NULL", "number": "NUMBER", "of": "OF",
-    "parseFloat": "PARSEFLOAT", "parseInt": "PARSEINT", "pop": "POP", "push": "PUSH", "return": "RETURN",
-    "string": "STRING", "switch": "SWITCH", "toLowerCase": "TOLOWERCASE", "toString": "TOSTRING",
-    "toUpperCase": "TOUPPERCASE", "true": "TRUE", "typeof": "TYPEOF", "var": "VAR", "while": "WHILE"
+    "Object": "OBJECT", "array": "ARRAY", "boolean": "BOOLEAN", "break": "BREAK", "case": "CASE",
+    "char": "CHAR", "console": "CONSOLE", "const": "CONST", "continue": "CONTINUE", "default": "DEFAULT",
+    "else": "ELSE", "false": "FALSE", "float": "FLOAT", "for": "FOR", "function": "FUNCTION", "if": "IF",
+    "indexOf": "INDEXOF", "interface": "INTERFACE", "join": "JOIN", "keys": "KEYS", "length": "LENGTH",
+    "log": "LOG", "null": "NULL", "number": "NUMBER", "of": "OF", "parseFloat": "PARSEFLOAT",
+    "parseInt": "PARSEINT", "pop": "POP", "push": "PUSH", "return": "RETURN", "string": "STRING",
+    "switch": "SWITCH", "toLowerCase": "TOLOWERCASE", "toString": "TOSTRING", "toUpperCase": "TOUPPERCASE",
+    "true": "TRUE", "typeof": "TYPEOF", "values": "VALUES", "var": "VAR", "while": "WHILE"
 }
 
 # noinspection SpellCheckingInspection
@@ -297,6 +306,8 @@ def p_statement(p):
                  | expression_statement
                  | flow_statements
                  | function_declaration
+                 | interface_declaration
+                 | interface_instantiation
                  | transfer_statement
                  | variable_assignment
                  | variable_declaration"""
@@ -304,56 +315,74 @@ def p_statement(p):
 
 
 def p_array_declaration(p):
-    """array_declaration : CONST IDENTIFIER COLON type LBRACKET RBRACKET ASSIGN LBRACKET RBRACKET SEMICOLON
-                         | CONST IDENTIFIER COLON type LBRACKET RBRACKET ASSIGN LBRACKET arguments RBRACKET SEMICOLON
-                         | CONST IDENTIFIER COLON type LBRACKET RBRACKET ASSIGN expression SEMICOLON
-                         | VAR IDENTIFIER COLON type LBRACKET RBRACKET ASSIGN LBRACKET RBRACKET SEMICOLON
-                         | VAR IDENTIFIER COLON type LBRACKET RBRACKET ASSIGN LBRACKET arguments RBRACKET SEMICOLON
-                         | VAR IDENTIFIER COLON type LBRACKET RBRACKET ASSIGN expression SEMICOLON"""
+    """array_declaration : CONST IDENTIFIER COLON type brackets ASSIGN LBRACKET RBRACKET SEMICOLON
+                         | CONST IDENTIFIER COLON type brackets ASSIGN LBRACKET arguments RBRACKET SEMICOLON
+                         | CONST IDENTIFIER COLON type brackets ASSIGN expression SEMICOLON
+                         | VAR IDENTIFIER COLON type brackets ASSIGN LBRACKET RBRACKET SEMICOLON
+                         | VAR IDENTIFIER COLON type brackets ASSIGN LBRACKET arguments RBRACKET SEMICOLON
+                         | VAR IDENTIFIER COLON type brackets ASSIGN expression SEMICOLON"""
     line = p.lexer.lineno
     column = find_column(p.lexer.lexdata, p.lexer)
 
     if p[1] == "const":  # Si el primer elemento es 'const', se debe de agregar un sufijo al nombre.
         p[2] = f"{p[2]}-constant"
 
-    if len(p) == 10:  # Si hay 10 elementos, entonces se le está asignando una expresión.
-        p[0] = ArrayDeclaration(line, column, p[2], p[4], p[8])
-    elif len(p) == 11:  # Si hay 11 elementos, entonces se le está asignando un arreglo vacío.
+    if len(p) == 9:  # Si hay 9 elementos, entonces se le está asignando una expresión.
+        p[0] = ArrayDeclaration(line, column, p[2], p[4], p[7])
+    elif len(p) == 10:  # Si hay 10 elementos, entonces se le está asignando un arreglo vacío.
         p[0] = ArrayDeclaration(line, column, p[2], p[4], Array(line, column))
-    else:  # Si hay 12 elementos, entonces se le está asignando un arreglo con valores.
-        p[0] = ArrayDeclaration(line, column, p[2], p[4], Array(line, column, p[9]))
+    else:  # Si hay 11 elementos, entonces se le está asignando un arreglo con valores.
+        p[0] = ArrayDeclaration(line, column, p[2], p[4], Array(line, column, p[8]))
 
 
-# noinspection DuplicatedCode
-def p_constant_declaration(p):
-    """constant_declaration : CONST IDENTIFIER ASSIGN expression SEMICOLON
-                            | CONST IDENTIFIER COLON type ASSIGN expression SEMICOLON"""
-    line = p.lexer.lineno
-    column = find_column(p.lexer.lexdata, p.lexer)
-
-    constant_name = f"{p[2]}-constant"  # Se le agrega un sufijo para diferenciarla de las variables.
-
-    if len(p) == 6:  # Si hay 6 elementos, entonces no hay un tipo o un valor.
-        p[0] = VariableDeclaration(line, column, constant_name, p[4].kind, p[4])
-    else:  # Si hay más de 6 elementos, entonces hay un tipo y un valor.
-        if p[4] == Types.FLOAT and p[6].kind == Types.NUMBER:  # Se hace una conversión implícita de número a flotante.
-            p[6].value = float(p[6].value)
-            p[6].kind = Types.FLOAT
-
-        p[0] = VariableDeclaration(line, column, constant_name, p[4], p[6])
+def p_type(p):
+    """type : ARRAY
+            | BOOLEAN
+            | CHAR
+            | FLOAT
+            | NUMBER
+            | STRING"""
+    p[0] = Types[p[1].upper()]  # Se debe de convertir a mayúsculas para que coincida.
 
 
-def p_expression_statement(p):
-    """expression_statement : expression SEMICOLON"""
+def p_brackets(p):
+    """brackets : LBRACKET RBRACKET
+                | brackets LBRACKET RBRACKET"""
+    if len(p) == 3:  # Si solo hay 3 elementos, entonces solo hay un par de corchetes.
+        p[0] = [p[1], p[2]]
+    else:  # Si hay más de 3 elementos, entonces hay más de un par de corchetes.
+        p[0] = p[1] + [p[2], p[3]]
+
+
+def p_arguments(p):
+    """arguments : LBRACKET arguments RBRACKET
+                 | argument
+                 | arguments COMMA LBRACKET arguments RBRACKET
+                 | arguments COMMA argument"""
+    if len(p) == 2:  # Si solo hay 2 elementos, entonces solo hay un argumento.
+        p[0] = [p[1]]  # Se debe de retornar una lista para que sea iterable y no cause problemas más adelante.
+    elif len(p) == 4:  # Si hay 4 elementos, entonces hay más de un argumento, dentro o fuera de corchetes.
+        if p[1] == '[':  # Si el primer elemento es un corchete abierto, entonces son argumentos dentro de corchetes.
+            p[0] = [p[2]]
+        else:  # Si el primer elemento no es un corchete abierto, entonces son argumentos fuera de corchetes.
+            p[0] = p[1] + [p[3]]
+    else:  # Si hay más de 2 elementos, entonces hay más de un argumento.
+        p[0] = p[1] + [p[4]]
+
+
+def p_argument(p):
+    """argument : expression"""
     p[0] = p[1]
 
 
 def p_expression(p):
     """expression : IDENTIFIER
-                  | IDENTIFIER LBRACKET expression RBRACKET
+                  | IDENTIFIER LPAREN RPAREN
                   | IDENTIFIER LPAREN arguments RPAREN
+                  | IDENTIFIER indices
                   | LPAREN expression RPAREN
                   | arithmetic_operation
+                  | field_access
                   | logical_operation
                   | native_function
                   | primitive
@@ -369,31 +398,29 @@ def p_expression(p):
         else:
             p[0] = p[1]
     elif len(p) == 4:  # Si hay 4 elementos, entonces es una expresión entre paréntesis.
-        p[0] = p[2]
+        if p[1] == '(':  # Si el primer elemento es un paréntesis abierto, entonces es una expresión entre paréntesis.
+            p[0] = p[2]
+        else:  # Si el primer elemento no es un paréntesis abierto, es una llamada a una función sin argumentos.
+            p[0] = FunctionCall(line, column, p[1])
     else:  # Si hay 5 elementos, entonces es un acceso a un arreglo o una llamada a una función con argumentos.
-        if p[2] == "(":
-            p[0] = ("function_call", p[1], p[3])
+        if p[2] == '(':
+            p[0] = FunctionCall(line, column, p[1], p[3])
         else:
             line = p.lexer.lineno
             column = find_column(p.lexer.lexdata, p.lexer)
 
             stored_value = VariableAccess(line, column, p[1])
 
-            p[0] = ArrayAccess(line, column, stored_value, p[3])
+            p[0] = ArrayAccess(line, column, stored_value, p[2])
 
 
-def p_arguments(p):
-    """arguments : argument
-                 | arguments COMMA argument"""
-    if len(p) == 2:  # Si solo hay 2 elementos, entonces solo hay un argumento.
-        p[0] = [p[1]]  # Se debe de retornar una lista para que sea iterable y no cause problemas más adelante.
-    else:  # Si hay más de 2 elementos, entonces hay más de un argumento.
+def p_indices(p):
+    """indices : LBRACKET expression RBRACKET
+               | indices LBRACKET expression RBRACKET"""
+    if len(p) == 4:  # Si solo hay 4 elementos, entonces solo hay un índice.
+        p[0] = [p[2]]  # Se debe de retornar una lista para que sea iterable y no cause problemas más adelante.
+    else:  # Si hay más de 4 elementos, entonces hay más de un índice.
         p[0] = p[1] + [p[3]]
-
-
-def p_argument(p):
-    """argument : expression"""
-    p[0] = p[1]
 
 
 def p_arithmetic_operation(p):
@@ -417,6 +444,25 @@ def p_arithmetic_operation(p):
         p[0] = Operation(line, column, '*', p[1], p[3])
 
 
+def p_field_access(p):
+    """field_access : IDENTIFIER field_chain"""
+    line = p.lexer.lineno
+    column = find_column(p.lexer.lexdata, p.lexer)
+
+    stored_value = VariableAccess(line, column, p[1])
+
+    p[0] = InterfaceAccess(line, column, stored_value, p[2])
+
+
+def p_field_chain(p):
+    """field_chain : DOT IDENTIFIER
+                   | DOT IDENTIFIER field_chain"""
+    if len(p) == 3:  # Si solo hay 3 elementos, entonces solo hay un campo.
+        p[0] = [p[2]]
+    else:  # Si hay más de 3 elementos, entonces hay más de un campo.
+        p[0] = [p[2]] + p[3]
+
+
 def p_logical_operation(p):
     """logical_operation : expression AND expression
                          | expression OR expression"""
@@ -430,18 +476,21 @@ def p_logical_operation(p):
 
 
 def p_native_function(p):
-    """native_function : CONSOLE DOT LOG LPAREN arguments RPAREN
+    """native_function : BOOLEAN DOT TOSTRING LPAREN RPAREN
+                       | CONSOLE DOT LOG LPAREN arguments RPAREN
                        | IDENTIFIER DOT INDEXOF LPAREN expression RPAREN
                        | IDENTIFIER DOT JOIN LPAREN RPAREN
                        | IDENTIFIER DOT LENGTH
                        | IDENTIFIER DOT POP LPAREN RPAREN
-                       | IDENTIFIER DOT PUSH LPAREN primitive RPAREN
+                       | IDENTIFIER DOT PUSH LPAREN expression RPAREN
+                       | IDENTIFIER DOT TOLOWERCASE LPAREN RPAREN
+                       | IDENTIFIER DOT TOSTRING LPAREN RPAREN
+                       | IDENTIFIER DOT TOUPPERCASE LPAREN RPAREN
+                       | OBJECT DOT KEYS LPAREN expression RPAREN
+                       | OBJECT DOT VALUES LPAREN expression RPAREN
                        | PARSEFLOAT LPAREN expression RPAREN
                        | PARSEINT LPAREN expression RPAREN
-                       | TYPEOF expression
-                       | expression DOT TOLOWERCASE LPAREN RPAREN
-                       | expression DOT TOSTRING LPAREN RPAREN
-                       | expression DOT TOUPPERCASE LPAREN RPAREN"""
+                       | TYPEOF expression"""
     line = p.lexer.lineno
     column = find_column(p.lexer.lexdata, p.lexer)
 
@@ -474,11 +523,24 @@ def p_native_function(p):
 
         p[0] = Push(line, column, stored_value, p[5])
     elif p[2] == "." and p[3] == "toLowerCase":
-        p[0] = ToLowerCase(line, column, p[1])
+        stored_value = VariableAccess(line, column, p[1])
+
+        p[0] = ToLowerCase(line, column, stored_value)
     elif p[2] == "." and p[3] == "toString":
-        p[0] = ToString(line, column, p[1])
+        if isinstance(p[1], Primitive):  # Si es una instancia de primitivo, no es necesario acceder a la variable.
+            p[0] = ToString(line, column, p[1])
+        else:
+            stored_value = VariableAccess(line, column, p[1])
+
+            p[0] = ToString(line, column, stored_value)
     elif p[2] == "." and p[3] == "toUpperCase":
-        p[0] = ToUpperCase(line, column, p[1])
+        stored_value = VariableAccess(line, column, p[1])
+
+        p[0] = ToUpperCase(line, column, stored_value)
+    elif p[2] == "." and p[3] == "keys":
+        p[0] = Keys(line, column, p[5])
+    elif p[2] == "." and p[3] == "values":
+        p[0] = Values(line, column, p[5])
 
 
 def p_primitive(p):
@@ -532,6 +594,31 @@ def p_unary_operation(p):
     p[0] = Operation(line, column, p[1], p[2], None)
 
 
+# noinspection DuplicatedCode
+def p_constant_declaration(p):
+    """constant_declaration : CONST IDENTIFIER ASSIGN expression SEMICOLON
+                            | CONST IDENTIFIER COLON type ASSIGN expression SEMICOLON"""
+    line = p.lexer.lineno
+    column = find_column(p.lexer.lexdata, p.lexer)
+
+    constant_name = f"{p[2]}-constant"  # Se le agrega un sufijo para diferenciarla de las variables.
+
+    if len(p) == 6:  # Si hay 6 elementos, entonces no hay un tipo o un valor.
+        p[0] = VariableDeclaration(line, column, constant_name, p[4].kind, p[4])
+    else:  # Si hay más de 6 elementos, entonces hay un tipo y un valor.
+        if isinstance(p[6], Primitive):  # Se hace una conversión implícita de número a flotante.
+            if p[4] == Types.FLOAT and p[6].kind == Types.NUMBER:
+                p[6].value = float(p[6].value)
+                p[6].kind = Types.FLOAT
+
+        p[0] = VariableDeclaration(line, column, constant_name, p[4], p[6])
+
+
+def p_expression_statement(p):
+    """expression_statement : expression SEMICOLON"""
+    p[0] = p[1]
+
+
 def p_flow_statements(p):
     """flow_statements : for_statement
                        | if_statement
@@ -544,15 +631,26 @@ def p_flow_statements(p):
 
 
 def p_for_statement(p):
-    """for_statement : FOR LPAREN expression OF expression RPAREN statement_block
+    """for_statement : FOR LPAREN VAR IDENTIFIER OF IDENTIFIER RPAREN statement_block
                      | FOR LPAREN statement expression_statement update RPAREN statement_block"""
     line = p.lexer.lineno
     column = find_column(p.lexer.lexdata, p.lexer)
 
-    if p[3] == "of":  # Si el tercer elemento es 'of', entonces es un 'for-of'.
-        p[0] = ("for_of", p[5], p[7])
+    if p[5] == "of":  # Si el quinto elemento es 'of', entonces es un 'for-of'.
+        iterable_expression = VariableAccess(line, column, p[6])  # Se accede a la variable que contiene el iterable.
+
+        p[0] = ForOfInstruction(line, column, p[4], iterable_expression, p[8])
     else:  # Si el tercer elemento no es 'of', entonces es un 'for'.
         p[0] = ForInstruction(line, column, p[3], p[4], p[5], p[7])
+
+
+def p_statement_block(p):
+    """statement_block : LBRACE RBRACE
+                       | LBRACE statements RBRACE"""
+    if len(p) == 3:  # Si solo hay 3 elementos, entonces no hay nada en el bloque.
+        p[0] = []
+    else:  # Si hay más de 3 elementos, entonces hay instrucciones en el bloque.
+        p[0] = p[2]
 
 
 def p_update(p):
@@ -573,19 +671,10 @@ def p_update(p):
         p[0] = Assignment(line, column, p[1], operation_result)
 
 
-def p_statement_block(p):
-    """statement_block : LBRACE RBRACE
-                       | LBRACE statements RBRACE"""
-    if len(p) == 3:  # Si solo hay 3 elementos, es decir, 'LBRACE' 'RBRACE', entonces no hay nada en el bloque.
-        p[0] = []
-    else:  # Si hay más de 3 elementos, entonces hay instrucciones en el bloque.
-        p[0] = p[2]
-
-
 def p_if_statement(p):
     """if_statement : IF LPAREN expression RPAREN statement_block
-                    | IF LPAREN expression RPAREN statement_block ELSE statement_block
-                    | IF LPAREN expression RPAREN statement_block ELSE if_statement"""
+                    | IF LPAREN expression RPAREN statement_block ELSE if_statement
+                    | IF LPAREN expression RPAREN statement_block ELSE statement_block"""
     line = p.lexer.lineno
     column = find_column(p.lexer.lexdata, p.lexer)
 
@@ -635,8 +724,23 @@ def p_while_statement(p):
 
 
 def p_function_declaration(p):
-    """function_declaration : FUNCTION IDENTIFIER LPAREN parameters RPAREN COLON type statement_block"""
-    p[0] = ('function_declaration', p[2], p[4], p[7], p[8])
+    """function_declaration : FUNCTION IDENTIFIER LPAREN RPAREN COLON type statement_block
+                            | FUNCTION IDENTIFIER LPAREN RPAREN statement_block
+                            | FUNCTION IDENTIFIER LPAREN parameters RPAREN COLON type statement_block
+                            | FUNCTION IDENTIFIER LPAREN parameters RPAREN statement_block"""
+    line = p.lexer.lineno
+    column = find_column(p.lexer.lexdata, p.lexer)
+
+    function_name = f"{p[2]}-function"  # Se le agrega un sufijo para diferenciarla de las variables.
+
+    if len(p) == 6:  # Si hay 6 elementos, entonces no hay un tipo o parámetros.
+        p[0] = FunctionDeclaration(line, column, function_name, p[5])
+    elif len(p) == 7:  # Si hay 7 elementos, entonces no hay un tipo.
+        p[0] = FunctionDeclaration(line, column, function_name, p[6], parameters=p[4])
+    elif len(p) == 8:  # Si hay 8 elementos, entonces no hay parámetros.
+        p[0] = FunctionDeclaration(line, column, function_name, p[7], kind=p[6])
+    else:  # Si hay 9 elementos, entonces hay un tipo y parámetros.
+        p[0] = FunctionDeclaration(line, column, function_name, p[8], kind=p[7], parameters=p[4])
 
 
 def p_parameters(p):
@@ -649,18 +753,56 @@ def p_parameters(p):
 
 
 def p_parameter(p):
-    """parameter : IDENTIFIER COLON type"""
-    p[0] = ('parameter', p[1], p[3])
+    """parameter : IDENTIFIER COLON type
+                 | IDENTIFIER COLON type LBRACKET RBRACKET"""
+    p[0] = {p[1]: p[3]}  # Se retorna un diccionario para que sea más fácil acceder a los parámetros.
 
 
-def p_type(p):
-    """type : ARRAY
-            | BOOLEAN
-            | CHAR
-            | FLOAT
-            | NUMBER
-            | STRING"""
-    p[0] = Types[p[1].upper()]  # Se debe de convertir a mayúsculas para que coincida.
+def p_interface_declaration(p):
+    """interface_declaration : INTERFACE IDENTIFIER LBRACE interface_body RBRACE"""
+    line = p.lexer.lineno
+    column = find_column(p.lexer.lexdata, p.lexer)
+
+    # Pass the struct name and the consolidated fields dictionary to StructDeclaration
+    p[0] = InterfaceDeclaration(line, column, p[2], p[4])  #
+
+
+def p_interface_body(p):
+    """interface_body : interface_body interface_field
+                      | interface_field"""
+    if len(p) == 2:  # Si solo hay 2 elementos, entonces solo hay un campo.
+        p[0] = p[1]
+    else:  # Si hay más de 2 elementos, se combinan en un solo diccionario, permitiendo comprobar nombres duplicados.
+        p[0] = {**p[1], **p[2]}
+
+
+def p_interface_field(p):
+    """interface_field : IDENTIFIER COLON IDENTIFIER SEMICOLON
+                       | IDENTIFIER COLON type SEMICOLON"""
+    p[0] = {p[1]: p[3]}  # Se crea una entrada de diccionario para el nombre del campo y el tipo
+
+
+def p_interface_instantiation(p):
+    """interface_instantiation : CONST IDENTIFIER COLON IDENTIFIER ASSIGN LBRACE field_values RBRACE SEMICOLON
+                               | VAR IDENTIFIER COLON IDENTIFIER ASSIGN LBRACE field_values RBRACE SEMICOLON"""
+    line = p.lexer.lineno
+    column = find_column(p.lexer.lexdata, p.lexer)
+
+    p[0] = VariableDeclaration(line, column, p[2], Types.INTERFACE, InterfaceInstantiation(line, column, p[4], p[7]))
+
+
+def p_field_values(p):
+    """field_values : field_value
+                    | field_values COMMA field_value"""
+    if len(p) == 2:  # Si solo hay 2 elementos, entonces solo hay un campo.
+        p[0] = p[1]
+    else:  # Si hay más de 2 elementos, se combinan en un solo diccionario, permitiendo comprobar nombres duplicados.
+        p[0] = {**p[1], **p[3]}
+
+
+def p_field_value(p):
+    """field_value : IDENTIFIER COLON expression"""
+    p[0] = {p[1]: p[3]}  # Se crea una entrada de diccionario para el nombre del campo y el valor.
 
 
 def p_transfer_statement(p):
@@ -697,7 +839,8 @@ def p_return_statement(p):
 def p_variable_assignment(p):
     """variable_assignment : IDENTIFIER ASSIGN expression SEMICOLON
                            | IDENTIFIER MINUSEQUAL expression SEMICOLON
-                           | IDENTIFIER PLUSEQUAL expression SEMICOLON"""
+                           | IDENTIFIER PLUSEQUAL expression SEMICOLON
+                           | IDENTIFIER field_chain ASSIGN expression SEMICOLON"""
     line = p.lexer.lineno
     column = find_column(p.lexer.lexdata, p.lexer)
 
@@ -708,11 +851,13 @@ def p_variable_assignment(p):
         operation_result = Operation(line, column, '-', stored_value, p[3])  # Se realiza la resta.
 
         p[0] = Assignment(line, column, p[1], operation_result)  # Se le asigna el nuevo valor a la variable.
-    else:  # Si el segundo elemento es '+=', entonces es una suma.
+    elif p[2] == "+=":  # Si el segundo elemento es '+=', entonces es una suma.
         stored_value = VariableAccess(line, column, p[1])  # Se obtiene el valor de la variable.
         operation_result = Operation(line, column, '+', stored_value, p[3])  # Se realiza la suma.
 
         p[0] = Assignment(line, column, p[1], operation_result)  # Se le asigna el nuevo valor a la variable.
+    else:
+        p[0] = InterfaceAssignment(line, column, [p[1]] + p[2], p[4])
 
 
 # noinspection DuplicatedCode
@@ -744,9 +889,10 @@ def p_variable_declaration(p):
 
                 p[0] = VariableDeclaration(line, column, p[2], dominant_type, p[4])
     else:  # Si hay más de 6 elementos, entonces hay un tipo y un valor.
-        if p[4] == Types.FLOAT and p[6].kind == Types.NUMBER:  # Se hace una conversión implícita de número a flotante.
-            p[6].value = float(p[6].value)
-            p[6].kind = Types.FLOAT
+        if isinstance(p[6], Primitive):  # Se hace una conversión implícita de número a flotante.
+            if p[4] == Types.FLOAT and p[6].kind == Types.NUMBER:
+                p[6].value = float(p[6].value)
+                p[6].kind = Types.FLOAT
 
         p[0] = VariableDeclaration(line, column, p[2], p[4], p[6])
 
