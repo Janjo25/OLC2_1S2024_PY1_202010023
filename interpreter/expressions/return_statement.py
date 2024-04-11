@@ -9,7 +9,7 @@ class ReturnStatement:
         self.expression = expression
 
     def execute(self, syntax_tree, environment):
-        if environment.is_within_control_flow():
+        if environment.is_within_function():
             if self.expression is None:  # Si es un return sin valor, se retorna un valor nulo.
                 return Symbol(self.line, self.column, None, Types.RETURN)
 
