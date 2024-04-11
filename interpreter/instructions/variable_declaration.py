@@ -1,3 +1,4 @@
+from interpreter.environment.types import Types
 from interpreter.interfaces.instruction import Instruction
 
 
@@ -13,6 +14,13 @@ class VariableDeclaration(Instruction):
         symbol = self.expressions.execute(syntax_tree, environment)
 
         if symbol.kind != self.kind:
+            if self.kind == Types.FLOAT and symbol.kind == Types.NUMBER:  # Se realiza una conversión implícita.
+                symbol.kind = Types.FLOAT
+
+                environment.check_variable(syntax_tree, self.name, symbol)  # Se revisa si existe en la tabla.
+
+                return
+
             line = symbol.line
             column = symbol.column
             error_description = f"el tipo de dato de la variable '{self.name}' no coincide con el tipo de dato"
