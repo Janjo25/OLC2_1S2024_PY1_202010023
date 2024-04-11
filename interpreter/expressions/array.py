@@ -7,22 +7,21 @@ class Array(Instruction):
     def __init__(self, line, column, expressions=None):
         self.line = line
         self.column = column
+
+        if expressions is None:
+            expressions = []
+
         self.expressions = expressions
 
     def execute(self, syntax_tree, environment):
-        array_values = []
+        """Función para procesar recursivamente una expresión que puede ser una lista de expresiones."""
 
-        try:
-            if self.expressions is not None:  # Si no hay expresiones, se retorna un arreglo vacío.
-                for expression in self.expressions:  # Se ejecuta cada expresión que se encuentre en el arreglo.
-                    index_expression = expression.execute(syntax_tree, environment)
+        def process_expression(expression):
+            if isinstance(expression, list):
+                return [process_expression(subexpression) for subexpression in expression]
+            else:
+                return expression.execute(syntax_tree, environment)
 
-                    array_values.append(index_expression)  # Se agrega el símbolo retornado al arreglo.
-        except TypeError:
-            error_description = "declaración de arreglo incorrecta"
+        array_values = [process_expression(expression) for expression in self.expressions]
 
-            syntax_tree.set_errors(self.line, self.column, error_description, environment.name, "semántico")
-
-            return Symbol(self.line, self.column, None, Types.NULL)  # Se retorna el arreglo vacío.
-
-        return Symbol(self.line, self.column, array_values, Types.ARRAY)  # Se retorna el arreglo con sus valores.
+        return Symbol(self.line, self.column, array_values, Types.ARRAY)

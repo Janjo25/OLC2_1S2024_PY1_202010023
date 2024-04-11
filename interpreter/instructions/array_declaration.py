@@ -13,19 +13,30 @@ class ArrayDeclaration(Instruction):
     def execute(self, syntax_tree, environment):
         symbol = self.expression.execute(syntax_tree, environment)
 
-        if symbol.kind != Types.ARRAY:  # Se verifica que el tipo del símbolo retornado sea un arreglo.
-            error_description = f"el tipo de dato '{self.kind}' no coincide con el tipo del arreglo"
+        if symbol.kind != Types.ARRAY:
+            error_description = f"se esperaba un arreglo en la declaración de '{self.name}'."
 
             syntax_tree.set_errors(self.line, self.column, error_description, environment.name, "semántico")
 
             return
 
-        for value in symbol.value:  # Se recorre el arreglo que contiene el símbolo retornado.
-            if value.kind != self.kind:  # Se revisa cada valor del arreglo para verificar que sea del tipo correcto.
-                error_description = f"el tipo de dato '{self.name}' no coincide con el tipo del arreglo"
+        """Función recursiva para validar cada elemento de un arreglo potencialmente multidimensional."""
 
-                syntax_tree.set_errors(self.line, self.column, error_description, environment.name, "semántico")
+        def validate_array_elements(elements, expected_type):
+            for element in elements:
+                if isinstance(element, list):  # El elemento es otra dimensión de la matriz.
+                    if not validate_array_elements(element, expected_type):
+                        return False
+                elif element.kind != expected_type:
+                    return False
 
-                return
+            return True
+
+        if not validate_array_elements(symbol.value, self.kind):
+            error_description = f"los elementos del arreglo '{self.name}' no son del tipo esperado."
+
+            syntax_tree.set_errors(self.line, self.column, error_description, environment.name, "semántico")
+
+            return
 
         environment.check_variable(syntax_tree, self.name, symbol)
